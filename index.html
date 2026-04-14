@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>周长探索工具 v2.2 | 自由调整版</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>周长探索工具 v2.3 | 移动优化版</title>
 <style>
   /* ===== RESET & BASE ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,31 +22,31 @@
     background: linear-gradient(90deg, #d32f2f, #f57c00);
     color: white;
     text-align: center;
-    padding: 16px 10px 12px;
+    padding: 12px 10px 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
-  header h1 { font-size: 1.8rem; letter-spacing: 2px; text-shadow: 1px 2px 4px rgba(0,0,0,0.3); }
-  header p { font-size: 0.9rem; opacity: 0.9; margin-top: 4px; }
+  header h1 { font-size: 1.5rem; letter-spacing: 2px; text-shadow: 1px 2px 4px rgba(0,0,0,0.3); }
+  header p { font-size: 0.8rem; opacity: 0.9; margin-top: 2px; }
 
   /* ===== LEVEL SELECTOR ===== */
   .level-bar {
     width: 100%;
     background: rgba(0,0,0,0.05);
-    padding: 14px 20px;
+    padding: 10px 12px;
     display: flex;
-    gap: 12px;
+    gap: 8px;
     justify-content: center;
     align-items: center;
     flex-wrap: wrap;
   }
-  .level-bar span { font-weight: bold; color: #333; }
+  .level-bar span { font-weight: bold; color: #333; font-size: 0.9rem; }
   .level-btn {
-    padding: 8px 16px;
+    padding: 6px 12px;
     border: 2px solid #ccc;
     background: white;
-    border-radius: 20px;
+    border-radius: 16px;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     font-weight: bold;
     transition: all 0.2s;
   }
@@ -54,41 +54,101 @@
     background: linear-gradient(90deg, #d32f2f, #f57c00);
     color: white;
     border-color: #d32f2f;
-    box-shadow: 0 2px 8px rgba(211,47,47,0.4);
   }
-  .level-btn:hover { border-color: #d32f2f; }
 
   /* ===== MAIN LAYOUT ===== */
   .main-container {
     display: flex;
-    flex-wrap: wrap;
     gap: 20px;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 20px 15px;
+    padding: 15px;
     width: 100%;
     max-width: 1400px;
   }
 
-  /* ===== LEFT PANEL: PALETTE + CONTROLS ===== */
+  /* ===== 桌面布局：三列 ===== */
   .left-panel {
     flex: 0 0 240px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
 
-  .palette-section, .controls-section, .summary-section {
+  .center-panel {
+    flex: 1 1 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .right-panel {
+    flex: 0 0 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* ===== 手机布局：改为垂直+浮动调色板 ===== */
+  @media (max-width: 900px) {
+    .main-container {
+      flex-direction: column;
+      gap: 12px;
+      padding: 10px;
+    }
+
+    .left-panel, .center-panel, .right-panel {
+      flex: 1 1 100% !important;
+    }
+
+    /* 调色板改为浮动在屏幕底部 */
+    .palette-section {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 20px 20px 0 0;
+      padding: 14px 12px;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+      z-index: 500;
+      max-height: 140px;
+      overflow-y: auto;
+      border-top: 3px solid #d32f2f;
+    }
+
+    /* 主内容向上留空，避免被调色板遮挡 */
+    .center-panel {
+      padding-bottom: 160px !important;
+    }
+
+    /* 隐藏右侧面板中的控制按钮（在调色板中重复了） */
+    .right-panel {
+      order: 1;
+    }
+
+    .left-panel {
+      display: none;
+    }
+  }
+
+  /* ===== 非常小的手机 ===== */
+  @media (max-width: 480px) {
+    header h1 { font-size: 1.2rem; }
+    .level-btn { font-size: 0.75rem; padding: 4px 8px; }
+    .palette-grid { grid-template-columns: repeat(5, 32px); }
+  }
+
+  /* ===== SECTIONS ===== */
+  .palette-section, .controls-section, .summary-section, .workspace-section, .table-section, .hints-section {
     background: white;
     border-radius: 16px;
-    padding: 14px 12px;
+    padding: 12px;
     box-shadow: 0 3px 12px rgba(0,0,0,0.08);
   }
 
-  .palette-section h2, .controls-section h2, .summary-section h2 {
-    font-size: 1rem;
+  .palette-section h2, .controls-section h2, .summary-section h2, .workspace-section h2, .table-section h2, .hints-section h2 {
+    font-size: 0.95rem;
     color: #d32f2f;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     text-align: center;
   }
 
@@ -112,21 +172,25 @@
     color: white; font-size: 0.65rem; font-weight: bold;
     user-select: none;
   }
-  .tile:hover { transform: scale(1.12); box-shadow: 0 4px 14px rgba(21,101,192,0.4); }
-  .tile.placed { opacity: 0.4; cursor: not-allowed; }
+  .tile:hover { transform: scale(1.12); }
+  .tile.placed { opacity: 0.4; }
+  .tile.selected {
+    border: 3px solid #ffd700;
+    box-shadow: 0 0 12px rgba(255,215,0,0.8);
+    transform: scale(1.15);
+  }
 
   .counter {
-    margin-top: 10px;
+    margin-top: 8px;
     text-align: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #555;
   }
-  .counter span { font-weight: bold; color: #e53935; font-size: 1.1rem; }
+  .counter span { font-weight: bold; color: #e53935; font-size: 1.05rem; }
 
-  .btn-reset, .btn-export, .btn-freestyle {
-    margin-top: 8px;
-    width: 100%;
-    padding: 9px 0;
+  /* ===== 按钮 ===== */
+  .btn-reset, .btn-freestyle, .btn-record {
+    padding: 10px 0;
     border: none;
     border-radius: 10px;
     font-size: 0.9rem;
@@ -134,6 +198,8 @@
     cursor: pointer;
     letter-spacing: 1px;
     transition: all 0.2s;
+    margin-top: 8px;
+    width: 100%;
   }
 
   .btn-reset {
@@ -146,10 +212,14 @@
     background: #7e57c2;
     color: white;
   }
-  .btn-freestyle.active {
-    background: #4527a0;
+  .btn-freestyle.active { background: #4527a0; }
+
+  .btn-record {
+    background: linear-gradient(90deg, #43a047, #66bb6a);
+    color: white;
   }
-  .btn-freestyle:hover { background: #4527a0; }
+  .btn-record:hover:not(:disabled) { background: linear-gradient(90deg, #2e7d32, #43a047); }
+  .btn-record:disabled { background: #b0bec5; cursor: not-allowed; }
 
   /* ===== EDGE COUNTER ===== */
   .edge-counter {
@@ -161,32 +231,8 @@
     color: #333;
     text-align: center;
   }
-  .edge-counter .internal { color: #d32f2f; font-weight: bold; }
-  .edge-counter .external { color: #388e3c; font-weight: bold; }
 
-  /* ===== CENTRAL WORKSPACE ===== */
-  .center-panel {
-    flex: 1 1 520px;
-    max-width: 700px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .workspace-section {
-    background: white;
-    border-radius: 16px;
-    padding: 14px 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-  }
-
-  .workspace-section h2 {
-    font-size: 1rem;
-    color: #d32f2f;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
+  /* ===== GRID CANVAS ===== */
   #grid-canvas {
     display: grid;
     grid-template-columns: repeat(16, 35px);
@@ -203,7 +249,6 @@
   .cell {
     width: 35px; height: 35px;
     background: #f5f5f5;
-    position: relative;
     border: 1px solid #ddd;
     transition: background 0.1s;
     cursor: pointer;
@@ -212,122 +257,65 @@
   .cell.occupied {
     background: linear-gradient(135deg, #64b5f6, #1976d2);
     border: 1px solid #1565c0;
-    cursor: grab;
-  }
-  
-  .cell.occupied:hover {
-    cursor: grab;
-    box-shadow: inset 0 0 6px rgba(0,0,0,0.15);
   }
 
   .cell.occupied.selected {
     border: 3px solid #ffd700;
     box-shadow: inset 0 0 8px rgba(255,215,0,0.6), 0 0 12px rgba(255,215,0,0.4);
-    cursor: grabbing;
   }
 
   .cell.irregular {
     background: linear-gradient(135deg, #ab47bc, #8e24aa);
     border: 1px solid #6a1b9a;
-    cursor: grab;
-  }
-
-  .cell.edge-internal {
-    background: linear-gradient(135deg, #64b5f6, #1976d2);
-    border: 2px dashed #999 !important;
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.2);
   }
 
   .cell.edge-external {
-    background: linear-gradient(135deg, #64b5f6, #1976d2);
     border: 2px solid #f57c00 !important;
     box-shadow: 0 0 6px rgba(245,124,0,0.5);
   }
 
-  .cell.drag-over { background: #ffe082; }
-
+  /* ===== STATUS BAR ===== */
   .status-bar {
-    margin-top: 10px;
     background: #e3f2fd;
     border-radius: 10px;
     padding: 10px 12px;
-    min-height: 50px;
-    font-size: 0.95rem;
+    min-height: 45px;
+    font-size: 0.9rem;
     color: #1565c0;
     font-weight: bold;
     text-align: center;
     border: 2px solid #90caf9;
   }
 
-  .status-bar .calc { font-size: 1.1rem; color: #e65100; margin-top: 3px; }
-  .status-bar .hint { color: #f57c00; font-size: 0.85rem; font-weight: normal; }
-
-  .btn-record {
-    margin-top: 8px;
-    width: 100%;
-    padding: 11px 0;
-    background: linear-gradient(90deg, #43a047, #66bb6a);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    letter-spacing: 1px;
-    box-shadow: 0 3px 10px rgba(67,160,71,0.3);
-    transition: all 0.2s;
-  }
-  .btn-record:hover { background: linear-gradient(90deg, #2e7d32, #43a047); transform: scale(1.02); }
-  .btn-record:disabled { background: #b0bec5; cursor: not-allowed; transform: none; }
-
-  /* ===== RIGHT PANEL: TABLE + HINTS ===== */
-  .right-panel {
-    flex: 0 0 280px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  /* ===== RESPONSIVE GRID ===== */
+  @media (max-width: 600px) {
+    #grid-canvas {
+      grid-template-columns: repeat(16, 24px);
+      grid-template-rows: repeat(16, 24px);
+    }
+    .cell { width: 24px; height: 24px; }
   }
 
-  .table-section, .hints-section {
-    background: white;
-    border-radius: 16px;
-    padding: 12px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-  }
-
-  .table-section h2, .hints-section h2 {
-    font-size: 0.95rem;
-    color: #d32f2f;
-    margin-bottom: 10px;
-    text-align: center;
-  }
-
+  /* ===== TABLE ===== */
   #record-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
   }
-
   #record-table th {
     background: #d32f2f;
     color: white;
     padding: 7px 4px;
     text-align: center;
-    font-size: 0.8rem;
   }
-
   #record-table td {
     padding: 6px 3px;
     text-align: center;
     border-bottom: 1px solid #e3f2fd;
-    color: #333;
   }
-
   #record-table tr:nth-child(even) td { background: #f5f5f5; }
 
-  .empty-hint { color: #aaa; font-size: 0.85rem; text-align: center; padding: 12px 0; }
-
-  /* ===== HINTS & SUGGESTIONS ===== */
+  /* ===== HINTS ===== */
   .hint-box {
     background: #fff3e0;
     border-left: 4px solid #ff9800;
@@ -335,7 +323,6 @@
     padding: 8px 10px;
     font-size: 0.8rem;
     color: #e65100;
-    margin-top: 6px;
     animation: slideIn 0.3s ease-out;
   }
 
@@ -344,7 +331,7 @@
     to { transform: translateX(0); opacity: 1; }
   }
 
-  /* ===== BADGES & ACHIEVEMENTS ===== */
+  /* ===== BADGES ===== */
   .badge-container {
     display: flex;
     flex-wrap: wrap;
@@ -360,22 +347,14 @@
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: bold;
-    box-shadow: 0 2px 6px rgba(255,165,0,0.3);
   }
 
-  .badge.unlock { animation: popBadge 0.4s cubic-bezier(.175,.885,.32,1.275); }
-
-  @keyframes popBadge {
-    from { transform: scale(0); }
-    to { transform: scale(1); }
-  }
-
-  /* ===== DISCOVERY POPUP ===== */
+  /* ===== POPUP ===== */
   #popup-overlay {
     display: none;
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.55);
-    z-index: 1000;
+    z-index: 2000;
     align-items: center;
     justify-content: center;
   }
@@ -384,8 +363,8 @@
   #popup-box {
     background: white;
     border-radius: 24px;
-    padding: 36px 32px 28px;
-    max-width: 500px;
+    padding: 32px 24px 24px;
+    max-width: 480px;
     width: 90%;
     text-align: center;
     box-shadow: 0 12px 40px rgba(0,0,0,0.3);
@@ -398,31 +377,7 @@
   }
 
   #popup-box .emoji { font-size: 3rem; }
-  #popup-box h2 { font-size: 1.5rem; color: #d32f2f; margin: 10px 0 8px; }
-  #popup-box .message { font-size: 1rem; color: #555; margin-bottom: 14px; line-height: 1.6; }
-
-  .chart-container {
-    background: #f5f5f5;
-    border-radius: 10px;
-    padding: 12px;
-    margin: 12px 0;
-    text-align: left;
-    font-size: 0.9rem;
-  }
-
-  .chart-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .chart-row.highlight {
-    background: #fff9c4;
-    font-weight: bold;
-    padding: 6px 4px;
-    border-radius: 4px;
-  }
+  #popup-box h2 { font-size: 1.4rem; color: #d32f2f; margin: 10px 0 8px; }
 
   .btn-close-popup {
     margin-top: 14px;
@@ -434,62 +389,19 @@
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.2s;
-  }
-  .btn-close-popup:hover { transform: scale(1.05); }
-
-  /* ===== RESPONSIVE ===== */
-  @media (max-width: 1000px) {
-    #grid-canvas {
-      grid-template-columns: repeat(16, 28px);
-      grid-template-rows: repeat(16, 28px);
-    }
-    .cell { width: 28px; height: 28px; }
-    .palette-grid { grid-template-columns: repeat(4, 32px); }
-    .tile { width: 32px; height: 32px; }
   }
 
-  @media (max-width: 700px) {
-    .main-container { flex-direction: column; }
-    .left-panel, .center-panel, .right-panel { flex: 1 1 100%; max-width: 100%; }
-    header h1 { font-size: 1.3rem; }
-  }
-
-  /* ===== SUCCESS ANIMATION ===== */
-  .record-success {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: linear-gradient(90deg, #43a047, #66bb6a);
-    color: white;
-    padding: 20px 40px;
-    border-radius: 12px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    z-index: 2000;
-    animation: popNotify 0.5s cubic-bezier(.175,.885,.32,1.275);
-  }
-
-  @keyframes popNotify {
-    0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-    50% { opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-  }
-
-  /* ===== REPOSITIONING FEEDBACK ===== */
-  .reposition-hint {
+  /* ===== 通知 ===== */
+  .reposition-hint, .delete-hint, .record-success {
     position: fixed;
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(90deg, #2196f3, #00bcd4);
-    color: white;
     padding: 12px 24px;
     border-radius: 20px;
     font-size: 0.95rem;
     font-weight: bold;
-    box-shadow: 0 4px 12px rgba(33,150,243,0.3);
+    color: white;
     z-index: 999;
     animation: slideDown 0.3s ease-out;
   }
@@ -499,32 +411,22 @@
     to { transform: translateX(-50%) translateY(0); opacity: 1; }
   }
 
-  /* ===== DELETE ON DOUBLE CLICK HINT ===== */
+  .reposition-hint {
+    background: linear-gradient(90deg, #2196f3, #00bcd4);
+  }
+
   .delete-hint {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
     background: linear-gradient(90deg, #ff6f00, #ff5722);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 20px;
-    font-size: 0.95rem;
-    font-weight: bold;
-    box-shadow: 0 4px 12px rgba(255,87,34,0.3);
-    z-index: 999;
-    animation: slideDown 0.3s ease-out;
   }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🧮 周长探索工具 v2.2</h1>
+  <h1>🧮 周长探索工具 v2.3</h1>
   <p>发现形状与周长的秘密规律！</p>
 </header>
 
-<!-- LEVEL SELECTOR -->
 <div class="level-bar">
   <span>📚 选择难度：</span>
   <button class="level-btn active" data-level="1">🌱 Level 1<br/>4 个方块</button>
@@ -532,33 +434,28 @@
   <button class="level-btn" data-level="3">🚀 Level 3<br/>36 个方块</button>
 </div>
 
-<!-- MAIN CONTENT -->
 <div class="main-container">
 
-  <!-- LEFT PANEL -->
+  <!-- LEFT PANEL - 桌面显示，手机隐藏 -->
   <div class="left-panel">
-    <!-- PALETTE -->
     <section class="palette-section">
       <h2>🟦 方块仓库</h2>
       <div class="palette-grid" id="palette"></div>
       <div class="counter">剩余：<span id="remaining">4</span> 块</div>
     </section>
 
-    <!-- CONTROLS -->
     <section class="controls-section">
       <h2>⚙️ 工具</h2>
       <button class="btn-reset" id="btn-reset">🔄 重置</button>
       <button class="btn-freestyle" id="btn-freestyle">🎨 自由模式</button>
     </section>
 
-    <!-- EDGE COUNTER -->
     <div class="edge-counter">
       <div>🔗 边计数</div>
       <div>内部边：<span class="internal" id="edge-internal">0</span></div>
       <div>外部边（周长）：<span class="external" id="edge-external">0</span></div>
     </div>
 
-    <!-- SUMMARY SECTION -->
     <section class="summary-section">
       <h2>🏆 本关成就</h2>
       <div class="badge-container" id="badge-container"></div>
@@ -566,14 +463,14 @@
     </section>
   </div>
 
-  <!-- CENTER PANEL -->
+  <!-- CENTER PANEL - 主工作区 -->
   <div class="center-panel">
     <section class="workspace-section">
       <h2>📐 拼图工作区</h2>
-      <p style="font-size:0.8rem; color:#666; text-align:center; margin-bottom:8px;">💡 提示：拖动任何方块可调整位置，双击可删除</p>
+      <p style="font-size:0.8rem; color:#666; text-align:center; margin-bottom:8px;">💡 提示：点击调色板选择，点击网格放置。双击已放置的方块可删除</p>
       <div id="grid-canvas"></div>
       <div class="status-bar" id="status-bar">
-        <div>👆 将方块拖入网格或调整已放置的方块</div>
+        <div>👆 选择方块或调整已放置的方块</div>
       </div>
       <button class="btn-record" id="btn-record" disabled>✅ 记录这个结果</button>
     </section>
@@ -581,7 +478,6 @@
 
   <!-- RIGHT PANEL -->
   <div class="right-panel">
-    <!-- TABLE -->
     <section class="table-section">
       <h2>📋 我的发现</h2>
       <table id="record-table">
@@ -592,26 +488,34 @@
           </tr>
         </thead>
         <tbody id="record-body">
-          <tr><td colspan="2" class="empty-hint">还没有记录</td></tr>
+          <tr><td colspan="2" style="color:#aaa; font-size:0.85rem;">还没有记录</td></tr>
         </tbody>
       </table>
     </section>
 
-    <!-- HINTS -->
     <section class="hints-section">
       <h2>💡 提示</h2>
       <div id="hints-container" style="font-size:0.85rem; color:#555;"></div>
     </section>
   </div>
 
+  <!-- 手机浮动调色板 -->
+  <section class="palette-section" id="mobile-palette" style="display:none;">
+    <h2>🟦 选择方块</h2>
+    <div class="palette-grid" id="palette-mobile"></div>
+    <div class="counter">剩余：<span id="remaining-mobile">4</span> 块</div>
+    <button class="btn-reset" id="btn-reset-mobile" style="margin-top:8px;">🔄 重置</button>
+    <button class="btn-freestyle" id="btn-freestyle-mobile" style="margin-top:4px;">🎨 自由模式</button>
+  </section>
+
 </div>
 
-<!-- DISCOVERY POPUP -->
+<!-- POPUP -->
 <div id="popup-overlay" role="dialog" aria-modal="true">
   <div id="popup-box">
     <div class="emoji">🎉</div>
     <h2>关卡完成！</h2>
-    <p class="message" id="popup-message"></p>
+    <p id="popup-message" style="font-size:1rem; color:#555; margin-bottom:14px; line-height:1.6;"></p>
     <div class="chart-container" id="popup-chart"></div>
     <button class="btn-close-popup" id="btn-close-popup">👍 继续探索</button>
   </div>
@@ -622,21 +526,9 @@
 //  CONFIGURATION BY LEVEL
 // ============================================================
 const LEVELS = {
-  1: {
-    tiles: 4,
-    targets: [{L:4, W:1}, {L:2, W:2}],
-    gridSize: 16,
-  },
-  2: {
-    tiles: 16,
-    targets: [{L:16, W:1}, {L:8, W:2}, {L:4, W:4}],
-    gridSize: 16,
-  },
-  3: {
-    tiles: 36,
-    targets: [{L:36, W:1}, {L:18, W:2}, {L:12, W:3}, {L:9, W:4}, {L:6, W:6}],
-    gridSize: 16,
-  }
+  1: { tiles: 4, targets: [{L:4, W:1}, {L:2, W:2}], gridSize: 16 },
+  2: { tiles: 16, targets: [{L:16, W:1}, {L:8, W:2}, {L:4, W:4}], gridSize: 16 },
+  3: { tiles: 36, targets: [{L:36, W:1}, {L:18, W:2}, {L:12, W:3}, {L:9, W:4}, {L:6, W:6}], gridSize: 16 }
 };
 
 // ============================================================
@@ -650,66 +542,76 @@ let currentRect = null;
 let records = [];
 let discoveryShown = false;
 let freeStyleMode = false;
-let dragTileId = null;
+let selectedPaletteId = null;
 let dragFromGrid = null;
 let dragFromGridPos = null;
 let selectedCell = null;
 let edgeStats = { internal: 0, external: 0 };
+let isMobile = window.innerWidth < 900;
 
-// Sound effect function
-function playSound(type) {
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const now = audioContext.currentTime;
-    
-    if (type === 'success') {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      osc.frequency.setValueAtTime(800, now);
-      osc.frequency.setValueAtTime(1000, now + 0.1);
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.setValueAtTime(0, now + 0.1);
-      osc.start(now);
-      osc.stop(now + 0.1);
-    } else if (type === 'record') {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      osc.frequency.setValueAtTime(600, now);
-      osc.frequency.setValueAtTime(800, now + 0.15);
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.setValueAtTime(0, now + 0.15);
-      osc.start(now);
-      osc.stop(now + 0.15);
-    }
-  } catch (e) {
-    // 静默处理
+// ============================================================
+//  DEVICE DETECTION & LAYOUT
+// ============================================================
+function updateLayout() {
+  isMobile = window.innerWidth < 900;
+  const mobilePalette = document.getElementById('mobile-palette');
+  const desktopPalette = document.querySelector('.left-panel');
+  
+  if (isMobile) {
+    mobilePalette.style.display = 'block';
+    desktopPalette.style.display = 'none';
+  } else {
+    mobilePalette.style.display = 'none';
+    desktopPalette.style.display = 'flex';
   }
 }
 
+window.addEventListener('resize', updateLayout);
+window.addEventListener('orientationchange', () => {
+  setTimeout(updateLayout, 100);
+});
+
 // ============================================================
-//  BUILD UI
+//  BUILD PALETTES (BOTH DESKTOP & MOBILE)
 // ============================================================
-function buildPalette() {
-  const palette = document.getElementById('palette');
-  palette.innerHTML = '';
+function buildPalettes() {
+  // 桌面版
+  const desktopPalette = document.getElementById('palette');
+  desktopPalette.innerHTML = '';
   for (let i = 0; i < config.tiles; i++) {
-    const tile = document.createElement('div');
-    tile.className = 'tile';
-    tile.textContent = '1';
-    tile.dataset.id = i;
-    tile.setAttribute('draggable', 'true');
-    tile.addEventListener('dragstart', onTileDragStart);
-    tile.addEventListener('dragend', onTileDragEnd);
-    tile.addEventListener('touchstart', onTileTouchStart, {passive: false});
-    palette.appendChild(tile);
+    const tile = createPaletteTile(i, 'desktop');
+    desktopPalette.appendChild(tile);
   }
+
+  // 手机版
+  const mobilePalette = document.getElementById('palette-mobile');
+  mobilePalette.innerHTML = '';
+  for (let i = 0; i < config.tiles; i++) {
+    const tile = createPaletteTile(i, 'mobile');
+    mobilePalette.appendChild(tile);
+  }
+
   updateRemaining();
 }
 
+function createPaletteTile(id, version) {
+  const tile = document.createElement('div');
+  tile.className = 'tile';
+  tile.textContent = '1';
+  tile.dataset.id = id;
+  tile.dataset.version = version;
+  tile.setAttribute('draggable', 'true');
+  
+  tile.addEventListener('click', onTileTap);
+  tile.addEventListener('dragstart', onTileDragStart);
+  tile.addEventListener('dragend', onTileDragEnd);
+  
+  return tile;
+}
+
+// ============================================================
+//  GRID
+// ============================================================
 function buildGrid() {
   const canvas = document.getElementById('grid-canvas');
   canvas.innerHTML = '';
@@ -742,8 +644,9 @@ document.querySelectorAll('.level-btn').forEach(btn => {
     discoveryShown = false;
     freeStyleMode = false;
     document.getElementById('btn-freestyle').classList.remove('active');
+    document.getElementById('btn-freestyle-mobile').classList.remove('active');
     resetGrid();
-    buildPalette();
+    buildPalettes();
     buildGrid();
     renderTable();
     updateBadges();
@@ -753,25 +656,62 @@ document.querySelectorAll('.level-btn').forEach(btn => {
 });
 
 // ============================================================
-//  DRAG & DROP PALETTE → GRID
+//  TAP-SELECT ON MOBILE (与桌面拖动并存)
+// ============================================================
+function onTileTap(e) {
+  if (!isMobile) return; // 仅手机
+  
+  e.stopPropagation();
+  const id = e.currentTarget.dataset.id;
+  
+  // 取消其他选中
+  document.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
+  
+  // 如果已放置，不能再选
+  const tile = document.querySelector(`.tile[data-id="${id}"]`);
+  if (tile.classList.contains('placed')) {
+    showHint('❌ 这个方块已放置');
+    return;
+  }
+  
+  // 选中此方块
+  e.currentTarget.classList.add('selected');
+  selectedPaletteId = id;
+  showHint('✅ 已选中！点击网格放置');
+}
+
+function showHint(message) {
+  const hint = document.createElement('div');
+  hint.className = 'reposition-hint';
+  hint.textContent = message;
+  hint.style.background = 'linear-gradient(90deg, #2196f3, #00bcd4)';
+  document.body.appendChild(hint);
+  setTimeout(() => hint.remove(), 2000);
+}
+
+// ============================================================
+//  DRAG & DROP (FOR DESKTOP)
 // ============================================================
 function onTileDragStart(e) {
-  dragTileId = e.currentTarget.dataset.id;
+  if (isMobile) return;
+  
+  if (e.currentTarget.classList.contains('placed')) {
+    e.preventDefault();
+    return;
+  }
+  
+  selectedPaletteId = e.currentTarget.dataset.id;
   dragFromGrid = null;
   e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/html', e.currentTarget);
 }
 
 function onTileDragEnd(e) {
-  if (dragFromGrid) {
-    dragFromGrid = null;
-    dragFromGridPos = null;
-    document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
-    selectedCell = null;
-  }
+  dragFromGrid = null;
+  dragFromGridPos = null;
 }
 
 function onCellDragOver(e) {
+  if (isMobile) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   e.currentTarget.classList.add('drag-over');
@@ -784,34 +724,37 @@ function onCellDragLeave(e) {
 function onCellDrop(e) {
   e.preventDefault();
   e.currentTarget.classList.remove('drag-over');
+  
   const row = +e.currentTarget.dataset.row;
   const col = +e.currentTarget.dataset.col;
 
-  // 来自调色板的拖动
-  if (dragTileId !== null && !dragFromGrid) {
+  // 来自调色板
+  if (selectedPaletteId !== null && !dragFromGrid) {
     if (grid[row][col]) {
-      showRejectionFeedback('此位置已占用！');
+      showHint('❌ 此位置已占用！');
       return;
     }
 
-    const tileEl = document.querySelector(`.tile[data-id="${dragTileId}"]`);
-    if (tileEl && !tileEl.classList.contains('placed')) {
-      placeOnGrid(row, col, 1);
-      tileEl.classList.add('placed');
-      tilesPlaced++;
-      dragTileId = null;
-      updateRemaining();
-      if (!freeStyleMode) analyzeGrid();
-      else analyzeIrregular();
-    }
+    placeOnGrid(row, col, 1);
+    tilesPlaced++;
+    
+    // 标记调色板中的方块为已用
+    document.querySelectorAll(`.tile[data-id="${selectedPaletteId}"]`).forEach(t => {
+      t.classList.add('placed');
+    });
+    
+    selectedPaletteId = null;
+    updateRemaining();
+    if (!freeStyleMode) analyzeGrid();
+    else analyzeIrregular();
   }
-  // 来自网格的拖动（重新定位）✨ 关键改动
+  // 来自网格（重新定位）
   else if (dragFromGrid && dragFromGridPos) {
     const {row: oldRow, col: oldCol} = dragFromGridPos;
     const cellType = grid[oldRow][oldCol];
     
     if (grid[row][col] && !(row === oldRow && col === oldCol)) {
-      showRejectionFeedback('此位置已占用！');
+      showHint('❌ 此位置已占用！');
       return;
     }
 
@@ -820,11 +763,9 @@ function onCellDrop(e) {
       return;
     }
 
-    // 移除旧位置
     grid[oldRow][oldCol] = 0;
     getCellEl(oldRow, oldCol).classList.remove('occupied', 'irregular', 'selected');
 
-    // 放置新位置
     grid[row][col] = cellType;
     getCellEl(row, col).classList.add(cellType === 1 ? 'occupied' : 'irregular', 'selected');
 
@@ -837,143 +778,49 @@ function onCellDrop(e) {
   }
 }
 
-function showRejectionFeedback(message) {
-  const hint = document.createElement('div');
-  hint.className = 'reposition-hint';
-  hint.textContent = '❌ ' + message;
-  hint.style.background = 'linear-gradient(90deg, #f44336, #e91e63)';
-  document.body.appendChild(hint);
-  setTimeout(() => hint.remove(), 2000);
-}
-
 // ============================================================
-//  TOUCH SUPPORT
-// ============================================================
-let touchTile = null, ghostEl = null, touchFromGrid = false, touchGridPos = null;
-
-function onTileTouchStart(e) {
-  e.preventDefault();
-  touchTile = e.currentTarget;
-  
-  const isGridCell = touchTile.classList.contains('cell');
-  if (isGridCell && touchTile.classList.contains('occupied')) {
-    touchFromGrid = true;
-    touchGridPos = {row: +touchTile.dataset.row, col: +touchTile.dataset.col};
-  } else if (isGridCell && touchTile.classList.contains('irregular')) {
-    touchFromGrid = true;
-    touchGridPos = {row: +touchTile.dataset.row, col: +touchTile.dataset.col};
-  } else if (touchTile.classList.contains('placed')) {
-    return;
-  }
-
-  const touch = e.touches[0];
-  ghostEl = touchTile.cloneNode(true);
-  ghostEl.style.position = 'fixed';
-  ghostEl.style.opacity = '0.7';
-  ghostEl.style.pointerEvents = 'none';
-  ghostEl.style.zIndex = '9999';
-  ghostEl.style.width = touchTile.offsetWidth + 'px';
-  ghostEl.style.height = touchTile.offsetHeight + 'px';
-  ghostEl.style.left = (touch.clientX - touchTile.offsetWidth/2) + 'px';
-  ghostEl.style.top = (touch.clientY - touchTile.offsetHeight/2) + 'px';
-  document.body.appendChild(ghostEl);
-  document.addEventListener('touchmove', onTouchMove, {passive: false});
-  document.addEventListener('touchend', onTouchEnd);
-}
-
-function onTouchMove(e) {
-  e.preventDefault();
-  const touch = e.touches[0];
-  if (ghostEl) {
-    ghostEl.style.left = (touch.clientX - parseFloat(ghostEl.style.width)/2) + 'px';
-    ghostEl.style.top = (touch.clientY - parseFloat(ghostEl.style.height)/2) + 'px';
-  }
-  document.querySelectorAll('.cell.drag-over').forEach(c => c.classList.remove('drag-over'));
-  const el = document.elementFromPoint(touch.clientX, touch.clientY);
-  if (el && el.classList.contains('cell')) el.classList.add('drag-over');
-}
-
-function onTouchEnd(e) {
-  document.removeEventListener('touchmove', onTouchMove);
-  document.removeEventListener('touchend', onTouchEnd);
-  if (ghostEl) { ghostEl.remove(); ghostEl = null; }
-  document.querySelectorAll('.cell.drag-over').forEach(c => c.classList.remove('drag-over'));
-
-  if (!touchTile) return;
-
-  const touch = e.changedTouches[0];
-  const el = document.elementFromPoint(touch.clientX, touch.clientY);
-  
-  if (el && el.classList.contains('cell')) {
-    const row = +el.dataset.row, col = +el.dataset.col;
-
-    if (!touchFromGrid && !touchTile.classList.contains('placed')) {
-      if (!grid[row][col]) {
-        placeOnGrid(row, col, 1);
-        touchTile.classList.add('placed');
-        tilesPlaced++;
-        updateRemaining();
-        if (!freeStyleMode) analyzeGrid();
-        else analyzeIrregular();
-      }
-    }
-    else if (touchFromGrid && touchGridPos) {
-      const {row: oldRow, col: oldCol} = touchGridPos;
-      const cellType = grid[oldRow][oldCol];
-      if (grid[row][col] && !(row === oldRow && col === oldCol)) {
-        showRejectionFeedback('此位置已占用！');
-      } else if (!(row === oldRow && col === oldCol)) {
-        grid[oldRow][oldCol] = 0;
-        getCellEl(oldRow, oldCol).classList.remove('occupied', 'irregular', 'selected');
-        grid[row][col] = cellType;
-        getCellEl(row, col).classList.add(cellType === 1 ? 'occupied' : 'irregular', 'selected');
-        selectedCell = {row, col};
-        if (!freeStyleMode) analyzeGrid();
-        else analyzeIrregular();
-      }
-    }
-  }
-
-  touchTile = null;
-  touchFromGrid = false;
-  touchGridPos = null;
-}
-
-// ============================================================
-//  CELL CLICK & DOUBLE CLICK HANDLER
+//  手机：点击网格放置
 // ============================================================
 function onCellClick(e) {
   const cell = e.currentTarget;
   const row = +cell.dataset.row;
   const col = +cell.dataset.col;
 
+  // 手机模式：选中的调色板方块放置
+  if (isMobile && selectedPaletteId !== null) {
+    if (grid[row][col]) {
+      showHint('❌ 此位置已占用！');
+      return;
+    }
+
+    placeOnGrid(row, col, 1);
+    tilesPlaced++;
+    
+    document.querySelectorAll(`.tile[data-id="${selectedPaletteId}"]`).forEach(t => {
+      t.classList.add('placed').classList.remove('selected');
+    });
+    
+    selectedPaletteId = null;
+    updateRemaining();
+    if (!freeStyleMode) analyzeGrid();
+    return;
+  }
+
+  // 非手机 或 自由模式
   if (freeStyleMode && grid[row][col] === 2) {
-    // 不删除，允许拖动
     if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
       deselectCell();
     } else {
       deselectCell();
       cell.classList.add('selected');
       selectedCell = {row, col};
-      cell.setAttribute('draggable', 'true');
-      cell.addEventListener('dragstart', onGridCellDragStart);
-      cell.addEventListener('dragend', onGridCellDragEnd);
-      showSelectionFeedback();
-    }
-    return;
-  } else if (freeStyleMode && !grid[row][col] && tilesPlaced < config.tiles) {
-    if (isAdjacentToOccupied(row, col) || tilesPlaced === 0) {
-      grid[row][col] = 2;
-      cell.classList.add('irregular');
-      tilesPlaced++;
-      updateRemaining();
-      analyzeIrregular();
+      showHint('✅ 已选中！拖动到新位置或双击删除');
     }
     return;
   }
 
-  // ✨ 非自由模式：任何已放置的方块都可选择拖动
-  if (!freeStyleMode && (grid[row][col] === 1 || grid[row][col] === 2)) {
+  // 非自由模式：选中已放置的方块
+  if (!freeStyleMode && grid[row][col] === 1) {
     if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
       deselectCell();
     } else {
@@ -983,12 +830,11 @@ function onCellClick(e) {
       cell.setAttribute('draggable', 'true');
       cell.addEventListener('dragstart', onGridCellDragStart);
       cell.addEventListener('dragend', onGridCellDragEnd);
-      showSelectionFeedback();
+      showHint('✅ 已选中！拖动到新位置或双击删除');
     }
   }
 }
 
-// ✨ 新增：双击删除功能
 function onCellDoubleClick(e) {
   const cell = e.currentTarget;
   const row = +cell.dataset.row;
@@ -1001,47 +847,14 @@ function onCellDoubleClick(e) {
     selectedCell = null;
     updateRemaining();
     
-    // 如果是从调色板拖入的，恢复调色板中的方块
     if (!freeStyleMode) {
-      // 重新计算，看看是否还有未使用的方块
-      const usedCount = grid.flat().filter(x => x).length;
-      const unusedCount = config.tiles - usedCount;
-      document.querySelectorAll('.tile').forEach((tile, idx) => {
-        tile.classList.remove('placed');
-      });
-      // 重新标记已使用的方块
-      for (let r = 0; r < 16; r++) {
-        for (let c = 0; c < 16; c++) {
-          if (grid[r][c]) {
-            // 标记已使用
-          }
-        }
-      }
-      tilesPlaced = usedCount;
-      updateRemaining();
       analyzeGrid();
     } else {
       analyzeIrregular();
     }
     
-    showDeleteFeedback();
+    showHint('🗑️ 已删除！');
   }
-}
-
-function showSelectionFeedback() {
-  const hint = document.createElement('div');
-  hint.className = 'reposition-hint';
-  hint.textContent = '✅ 已选中！拖动到新位置或点击取消';
-  document.body.appendChild(hint);
-  setTimeout(() => hint.remove(), 2500);
-}
-
-function showDeleteFeedback() {
-  const hint = document.createElement('div');
-  hint.className = 'delete-hint';
-  hint.textContent = '🗑️ 已删除！';
-  document.body.appendChild(hint);
-  setTimeout(() => hint.remove(), 1500);
 }
 
 function deselectCell() {
@@ -1062,31 +875,29 @@ function onGridCellDragStart(e) {
 }
 
 function onGridCellDragEnd(e) {
-  // 处理已在 onCellDrop 中
+  // 已在 onCellDrop 中处理
 }
 
 // ============================================================
 //  FREE STYLE MODE
 // ============================================================
-document.getElementById('btn-freestyle').addEventListener('click', (e) => {
+const setupFreeStyleButtons = () => {
+  document.getElementById('btn-freestyle').addEventListener('click', toggleFreeStyle);
+  document.getElementById('btn-freestyle-mobile').addEventListener('click', toggleFreeStyle);
+};
+
+function toggleFreeStyle(e) {
   freeStyleMode = !freeStyleMode;
-  e.currentTarget.classList.toggle('active');
+  document.getElementById('btn-freestyle').classList.toggle('active');
+  document.getElementById('btn-freestyle-mobile').classList.toggle('active');
   deselectCell();
+  
   if (freeStyleMode) {
-    document.getElementById('hints-container').innerHTML = '<div class="hint-box">🎨 自由模式已开启，点击创建任何形状！拖动调整，双击删除！</div>';
+    document.getElementById('hints-container').innerHTML = '<div class="hint-box">🎨 自由模式已开启！点击创建任何形状，双击删除</div>';
   } else {
     document.getElementById('hints-container').innerHTML = '';
     analyzeGrid();
   }
-});
-
-function isAdjacentToOccupied(r, c) {
-  const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
-  for (const [dr, dc] of dirs) {
-    const nr = r + dr, nc = c + dc;
-    if (nr >= 0 && nr < 16 && nc >= 0 && nc < 16 && grid[nr][nc]) return true;
-  }
-  return false;
 }
 
 // ============================================================
@@ -1106,12 +917,13 @@ function resetGrid() {
   tilesPlaced = 0;
   currentRect = null;
   selectedCell = null;
+  selectedPaletteId = null;
   dragFromGrid = null;
   dragFromGridPos = null;
   document.querySelectorAll('.cell').forEach(c => {
     c.classList.remove('occupied', 'irregular', 'edge-internal', 'edge-external', 'selected');
   });
-  document.querySelectorAll('.tile').forEach(t => t.classList.remove('placed'));
+  document.querySelectorAll('.tile').forEach(t => t.classList.remove('placed', 'selected'));
   updateRemaining();
   updateStatus(null, null);
   updateEdgeCounter(0, 0);
@@ -1119,7 +931,9 @@ function resetGrid() {
 }
 
 function updateRemaining() {
-  document.getElementById('remaining').textContent = config.tiles - tilesPlaced;
+  const remaining = config.tiles - tilesPlaced;
+  document.getElementById('remaining').textContent = remaining;
+  document.getElementById('remaining-mobile').textContent = remaining;
 }
 
 // ============================================================
@@ -1186,7 +1000,7 @@ function analyzeGrid() {
 }
 
 // ============================================================
-//  EDGE HIGHLIGHTING & CALCULATION
+//  EDGE CALCULATION
 // ============================================================
 function highlightEdges(minR, maxR, minC, maxC) {
   document.querySelectorAll('.cell.edge-internal, .cell.edge-external').forEach(c => {
@@ -1199,8 +1013,6 @@ function highlightEdges(minR, maxR, minC, maxC) {
         const isPerimeter = r === minR || r === maxR || c === minC || c === maxC;
         if (isPerimeter) {
           getCellEl(r, c).classList.add('edge-external');
-        } else {
-          getCellEl(r, c).classList.add('edge-internal');
         }
       }
     }
@@ -1234,7 +1046,7 @@ function updateEdgeCounter(internal, external) {
 }
 
 // ============================================================
-//  IRREGULAR SHAPE ANALYSIS
+//  IRREGULAR ANALYSIS
 // ============================================================
 function analyzeIrregular() {
   if (tilesPlaced === 0) {
@@ -1293,28 +1105,26 @@ function updateStatus(rect, state, irregPerim = 0) {
   if (state === 'valid' && rect) {
     bar.innerHTML = `
       <div>✅ 长 = <strong>${rect.L} dm</strong> | 宽 = <strong>${rect.W} dm</strong></div>
-      <div class="calc">(${rect.L} + ${rect.W}) × 2 = <strong>${rect.perimeter} dm</strong></div>`;
+      <div class="calc" style="font-size:1.05rem; color:#e65100; margin-top:3px;">(${rect.L} + ${rect.W}) × 2 = <strong>${rect.perimeter} dm</strong></div>`;
   } else if (state === 'irregular') {
-    bar.innerHTML = `<div class="hint">⚠️ 还不是完整的长方形</div>`;
+    bar.innerHTML = `<div style="color:#f57c00; font-weight:bold;">⚠️ 还不是完整的长方形</div>`;
   } else if (state === 'shape') {
     bar.innerHTML = `<div>🎨 自由形状 | 周长 = <strong>${irregPerim} dm</strong></div>`;
   } else {
-    bar.innerHTML = `<div>👆 拖入方块或调整已放置的方块</div>`;
+    bar.innerHTML = `<div>👆 选择方块或拖动已放置的方块</div>`;
   }
 }
 
 // ============================================================
-//  RECORD RESULT
+//  RECORD
 // ============================================================
 document.getElementById('btn-record').addEventListener('click', () => {
   if (!currentRect && !freeStyleMode) return;
 
   if (freeStyleMode) {
     const perimeter = calculateIrregularPerimeter();
-    const shape = `不规则形状`;
-    records.push({shape, perimeter, isIrregular: true});
-    playSound('record');
-    showSuccessNotification();
+    records.push({shape: '不规则形状', perimeter, isIrregular: true});
+    showSuccessNotif();
     renderTable();
     return;
   }
@@ -1324,22 +1134,22 @@ document.getElementById('btn-record').addEventListener('click', () => {
   const keyR = `${W}x${L}`;
   
   if (records.find(r => r.key === key || r.key === keyR)) {
-    alert('这个配置已记录！试试别的。');
+    alert('这个配置已记录！');
     return;
   }
 
   records.push({L, W, perimeter, key});
-  playSound('record');
-  showSuccessNotification();
+  showSuccessNotif();
   renderTable();
   updateBadges();
   checkDiscovery();
 });
 
-function showSuccessNotification() {
+function showSuccessNotif() {
   const notif = document.createElement('div');
   notif.className = 'record-success';
   notif.textContent = '✅ 记录成功！';
+  notif.style.background = 'linear-gradient(90deg, #43a047, #66bb6a)';
   document.body.appendChild(notif);
   setTimeout(() => notif.remove(), 500);
 }
@@ -1347,7 +1157,7 @@ function showSuccessNotification() {
 function renderTable() {
   const tbody = document.getElementById('record-body');
   if (records.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="2" class="empty-hint">还没有记录</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="2" style="color:#aaa; font-size:0.85rem;">还没有记录</td></tr>';
     return;
   }
   tbody.innerHTML = records.map(r => {
@@ -1359,7 +1169,7 @@ function renderTable() {
 }
 
 // ============================================================
-//  BADGES & ACHIEVEMENTS
+//  BADGES
 // ============================================================
 function updateBadges() {
   const container = document.getElementById('badge-container');
@@ -1378,7 +1188,7 @@ function updateBadges() {
     const key = `${t.L}x${t.W}`;
     if (found.has(key)) {
       const badge = document.createElement('div');
-      badge.className = 'badge unlock';
+      badge.className = 'badge';
       badge.textContent = `✓ ${t.L}×${t.W}`;
       container.appendChild(badge);
     }
@@ -1399,7 +1209,7 @@ function updateLevelProgress() {
 }
 
 // ============================================================
-//  HINTS & SUGGESTIONS
+//  HINTS
 // ============================================================
 function generateHint() {
   const hintsDiv = document.getElementById('hints-container');
@@ -1433,7 +1243,7 @@ function generateHint() {
 }
 
 // ============================================================
-//  DISCOVERY CHECK
+//  DISCOVERY
 // ============================================================
 function checkDiscovery() {
   if (discoveryShown) return;
@@ -1459,14 +1269,13 @@ function showDiscovery() {
   rects.forEach((r, idx) => {
     const isMinimal = idx === 0;
     chartHTML += `
-      <div class="chart-row ${isMinimal ? 'highlight' : ''}">
+      <div class="chart-row ${isMinimal ? 'highlight' : ''}" style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #ddd; ${isMinimal ? 'background:#fff9c4; font-weight:bold; border-radius:4px;' : ''}">
         <span>${r.L}×${r.W}</span>
         <span>周长 = ${r.perimeter} dm ${isMinimal ? '✨' : ''}</span>
       </div>`;
   });
 
-  document.getElementById('popup-message').textContent = 
-    '你发现了周长的规律！';
+  document.getElementById('popup-message').textContent = '你发现了周长的规律！';
   document.getElementById('popup-chart').innerHTML = chartHTML;
   document.getElementById('popup-overlay').classList.add('show');
 }
@@ -1475,13 +1284,19 @@ document.getElementById('btn-close-popup').addEventListener('click', () => {
   document.getElementById('popup-overlay').classList.remove('show');
 });
 
+// ============================================================
+//  RESET BUTTONS
+// ============================================================
 document.getElementById('btn-reset').addEventListener('click', resetGrid);
+document.getElementById('btn-reset-mobile').addEventListener('click', resetGrid);
 
 // ============================================================
 //  INIT
 // ============================================================
-buildPalette();
+updateLayout();
+buildPalettes();
 buildGrid();
+setupFreeStyleButtons();
 updateBadges();
 updateLevelProgress();
 </script>
