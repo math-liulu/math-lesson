@@ -2,11 +2,21 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>周长探索工具</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, touch-action=none"/>
+<title>周长探索工具 - 触屏版</title>
 <style>
   /* ===== RESET & BASE ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  html, body {
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
   body {
     font-family: 'Segoe UI', 'Comic Sans MS', 'Arial Rounded MT Bold', Arial, sans-serif;
     background: linear-gradient(135deg, #fce4ec 0%, #e1f5fe 50%, #f0f4c3 100%);
@@ -14,6 +24,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow-x: hidden;
   }
 
   /* ===== HEADER ===== */
@@ -24,6 +35,7 @@
     text-align: center;
     padding: 12px 10px 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 100;
   }
   header h1 { font-size: 1.5rem; letter-spacing: 2px; text-shadow: 1px 2px 4px rgba(0,0,0,0.3); }
 
@@ -48,6 +60,9 @@
     font-size: 0.8rem;
     font-weight: bold;
     transition: all 0.2s;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
   }
   .level-btn.active {
     background: linear-gradient(90deg, #d32f2f, #f57c00);
@@ -62,6 +77,7 @@
     padding: 15px;
     width: 100%;
     max-width: 1400px;
+    flex: 1;
   }
 
   /* ===== 桌面布局：三列 ===== */
@@ -86,7 +102,7 @@
     gap: 12px;
   }
 
-  /* ===== 手机布局：改为垂直+浮动调色板 ===== */
+  /* ===== 手机/平板布局：改为垂直 ===== */
   @media (max-width: 900px) {
     .main-container {
       flex-direction: column;
@@ -98,7 +114,6 @@
       flex: 1 1 100% !important;
     }
 
-    /* 调色板改为浮动在屏幕底部 */
     .palette-section {
       position: fixed;
       bottom: 0;
@@ -109,17 +124,15 @@
       padding: 14px 12px;
       box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
       z-index: 500;
-      max-height: 140px;
+      max-height: 160px;
       overflow-y: auto;
       border-top: 3px solid #d32f2f;
     }
 
-    /* 主内容向上留空，避免被调色板遮挡 */
     .center-panel {
-      padding-bottom: 160px !important;
+      padding-bottom: 180px !important;
     }
 
-    /* 隐藏右侧面板中的控制按钮（在调色板中重复了） */
     .right-panel {
       order: 1;
     }
@@ -142,6 +155,7 @@
     border-radius: 16px;
     padding: 12px;
     box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    touch-action: manipulation;
   }
 
   .palette-section h2, .controls-section h2, .summary-section h2, .workspace-section h2, .table-section h2, .hints-section h2 {
@@ -166,10 +180,10 @@
     cursor: grab;
     box-shadow: 0 2px 6px rgba(21,101,192,0.25);
     transition: transform 0.15s, box-shadow 0.15s;
-    touch-action: none;
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 0.65rem; font-weight: bold;
     user-select: none;
+    touch-action: none;
   }
   .tile:hover { transform: scale(1.12); }
   .tile.placed { opacity: 0.4; }
@@ -199,6 +213,9 @@
     transition: all 0.2s;
     margin-top: 8px;
     width: 100%;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   .btn-reset {
@@ -206,12 +223,14 @@
     color: white;
   }
   .btn-reset:hover { background: #b71c1c; }
+  .btn-reset:active { transform: scale(0.98); }
 
   .btn-freestyle {
     background: #7e57c2;
     color: white;
   }
   .btn-freestyle.active { background: #4527a0; }
+  .btn-freestyle:active { transform: scale(0.98); }
 
   .btn-record {
     background: linear-gradient(90deg, #43a047, #66bb6a);
@@ -219,6 +238,7 @@
   }
   .btn-record:hover:not(:disabled) { background: linear-gradient(90deg, #2e7d32, #43a047); }
   .btn-record:disabled { background: #b0bec5; cursor: not-allowed; }
+  .btn-record:active:not(:disabled) { transform: scale(0.98); }
 
   /* ===== EDGE COUNTER ===== */
   .edge-counter {
@@ -243,6 +263,7 @@
     overflow: hidden;
     user-select: none;
     margin: 0 auto;
+    touch-action: none;
   }
 
   .cell {
@@ -251,6 +272,7 @@
     border: 1px solid #ddd;
     transition: background 0.15s;
     cursor: pointer;
+    touch-action: none;
   }
 
   .cell.occupied {
@@ -270,7 +292,7 @@
   }
 
   .cell.edge-external {
-    /* 周长边在这里通过 inline style 设置 */
+    /* 周长边通过 inline style 设置 */
   }
 
   /* ===== STATUS BAR ===== */
@@ -388,6 +410,7 @@
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
+    touch-action: manipulation;
   }
 
   /* ===== 通知 ===== */
@@ -403,6 +426,7 @@
     color: white;
     z-index: 999;
     animation: slideDown 0.3s ease-out;
+    pointer-events: none;
   }
 
   @keyframes slideDown {
@@ -552,6 +576,27 @@ let edgeStats = { internal: 0, external: 0 };
 let isMobile = window.innerWidth < 900;
 
 // ============================================================
+//  TOUCH & DRAG STATE
+// ============================================================
+let dragState = {
+  active: false,
+  startX: 0,
+  startY: 0,
+  element: null,
+  fromPalette: false,
+  fromGrid: false,
+  gridPos: null
+};
+
+let gridDragState = {
+  active: false,
+  startRow: null,
+  startCol: null,
+  startX: 0,
+  startY: 0
+};
+
+// ============================================================
 //  DEVICE DETECTION & LAYOUT
 // ============================================================
 function updateLayout() {
@@ -602,61 +647,92 @@ function createPaletteTile(id, version) {
   tile.dataset.version = version;
   tile.setAttribute('draggable', 'true');
   
-  tile.addEventListener('click', onTileTap);
+  // 鼠标事件
   tile.addEventListener('dragstart', onTileDragStart);
   tile.addEventListener('dragend', onTileDragEnd);
+  
+  // 触屏事件
+  tile.addEventListener('touchstart', onTileTouchStart, false);
+  tile.addEventListener('touchmove', onTileTouchMove, false);
+  tile.addEventListener('touchend', onTileTouchEnd, false);
+  
+  // 点击事件
+  tile.addEventListener('click', onTileTap);
   
   return tile;
 }
 
 // ============================================================
-//  GRID
+//  PALETTE TOUCH EVENTS
 // ============================================================
-function buildGrid() {
-  const canvas = document.getElementById('grid-canvas');
-  canvas.innerHTML = '';
-  for (let r = 0; r < 16; r++) {
-    for (let c = 0; c < 16; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.row = r;
-      cell.dataset.col = c;
-      cell.addEventListener('dragover', onCellDragOver);
-      cell.addEventListener('dragleave', onCellDragLeave);
-      cell.addEventListener('drop', onCellDrop);
-      cell.addEventListener('click', onCellClick);
-      cell.addEventListener('dblclick', onCellDoubleClick);
-      canvas.appendChild(cell);
+function onTileTouchStart(e) {
+  if (e.currentTarget.classList.contains('placed')) {
+    e.preventDefault();
+    return;
+  }
+  
+  e.preventDefault();
+  dragState.active = true;
+  dragState.element = e.currentTarget;
+  dragState.fromPalette = true;
+  dragState.fromGrid = false;
+  dragState.startX = e.touches[0].clientX;
+  dragState.startY = e.touches[0].clientY;
+  selectedPaletteId = e.currentTarget.dataset.id;
+  
+  // 视觉反馈
+  e.currentTarget.style.opacity = '0.6';
+  e.currentTarget.style.transform = 'scale(1.15)';
+}
+
+function onTileTouchMove(e) {
+  if (!dragState.active) return;
+  e.preventDefault();
+}
+
+function onTileTouchEnd(e) {
+  if (!dragState.active) return;
+  
+  const touch = e.changedTouches[0];
+  const endX = touch.clientX;
+  const endY = touch.clientY;
+  
+  // 恢复视觉效果
+  if (dragState.element) {
+    dragState.element.style.opacity = '1';
+    dragState.element.style.transform = '';
+  }
+  
+  // 查找触屏结束位置的单元格
+  const element = document.elementFromPoint(endX, endY);
+  
+  if (element && element.classList.contains('cell')) {
+    const row = +element.dataset.row;
+    const col = +element.dataset.col;
+    
+    if (grid[row][col]) {
+      showHint('❌ 此位置已占用！');
+    } else {
+      placeOnGrid(row, col, 1);
+      tilesPlaced++;
+      
+      document.querySelectorAll(`.tile[data-id="${selectedPaletteId}"]`).forEach(t => {
+        t.classList.add('placed');
+      });
+      
+      selectedPaletteId = null;
+      updateRemaining();
+      if (!freeStyleMode) analyzeGrid();
+      else analyzeIrregular();
     }
   }
+  
+  dragState.active = false;
+  dragState.element = null;
 }
 
 // ============================================================
-//  LEVEL SWITCHING
-// ============================================================
-document.querySelectorAll('.level-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentLevel = +btn.dataset.level;
-    config = LEVELS[currentLevel];
-    records = [];
-    discoveryShown = false;
-    freeStyleMode = false;
-    document.getElementById('btn-freestyle').classList.remove('active');
-    document.getElementById('btn-freestyle-mobile').classList.remove('active');
-    resetGrid();
-    buildPalettes();
-    buildGrid();
-    renderTable();
-    updateBadges();
-    updateLevelProgress();
-    document.getElementById('hints-container').innerHTML = '';
-  });
-});
-
-// ============================================================
-//  MOBILE TAP-SELECT
+//  TILE TAP
 // ============================================================
 function onTileTap(e) {
   if (!isMobile) return;
@@ -677,16 +753,8 @@ function onTileTap(e) {
   showHint('✅ 已选中！点击网格放置');
 }
 
-function showHint(message) {
-  const hint = document.createElement('div');
-  hint.className = 'reposition-hint';
-  hint.textContent = message;
-  document.body.appendChild(hint);
-  setTimeout(() => hint.remove(), 2000);
-}
-
 // ============================================================
-//  DRAG & DROP
+//  MOUSE DRAG EVENTS
 // ============================================================
 function onTileDragStart(e) {
   if (isMobile) return;
@@ -706,6 +774,142 @@ function onTileDragEnd(e) {
   dragFromGridPos = null;
 }
 
+// ============================================================
+//  GRID
+// ============================================================
+function buildGrid() {
+  const canvas = document.getElementById('grid-canvas');
+  canvas.innerHTML = '';
+  for (let r = 0; r < 16; r++) {
+    for (let c = 0; c < 16; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.row = r;
+      cell.dataset.col = c;
+      
+      // 鼠标事件
+      cell.addEventListener('dragover', onCellDragOver);
+      cell.addEventListener('dragleave', onCellDragLeave);
+      cell.addEventListener('drop', onCellDrop);
+      
+      // 触屏事件
+      cell.addEventListener('touchstart', onCellTouchStart, false);
+      cell.addEventListener('touchmove', onCellTouchMove, false);
+      cell.addEventListener('touchend', onCellTouchEnd, false);
+      
+      // 点击事件
+      cell.addEventListener('click', onCellClick);
+      cell.addEventListener('dblclick', onCellDoubleClick);
+      
+      canvas.appendChild(cell);
+    }
+  }
+}
+
+// ============================================================
+//  CELL TOUCH EVENTS
+// ============================================================
+function onCellTouchStart(e) {
+  const row = +e.currentTarget.dataset.row;
+  const col = +e.currentTarget.dataset.col;
+  
+  // 如果是标准模式且点击的是已放置的方块
+  if (!freeStyleMode && grid[row][col] === 1) {
+    e.preventDefault();
+    gridDragState.active = true;
+    gridDragState.startRow = row;
+    gridDragState.startCol = col;
+    gridDragState.startX = e.touches[0].clientX;
+    gridDragState.startY = e.touches[0].clientY;
+    
+    deselectCell();
+    const cell = getCellEl(row, col);
+    cell.classList.add('selected');
+    selectedCell = {row, col};
+    cell.style.opacity = '0.7';
+    showHint('✅ 已选中！向新位置滑动');
+  }
+  // 自由模式
+  else if (freeStyleMode && grid[row][col] === 2) {
+    e.preventDefault();
+    gridDragState.active = true;
+    gridDragState.startRow = row;
+    gridDragState.startCol = col;
+    gridDragState.startX = e.touches[0].clientX;
+    gridDragState.startY = e.touches[0].clientY;
+    
+    deselectCell();
+    const cell = getCellEl(row, col);
+    cell.classList.add('selected');
+    selectedCell = {row, col};
+    cell.style.opacity = '0.7';
+  }
+}
+
+function onCellTouchMove(e) {
+  if (!gridDragState.active) return;
+  e.preventDefault();
+}
+
+function onCellTouchEnd(e) {
+  if (!gridDragState.active) return;
+  
+  const touch = e.changedTouches[0];
+  const endX = touch.clientX;
+  const endY = touch.clientY;
+  
+  const oldRow = gridDragState.startRow;
+  const oldCol = gridDragState.startCol;
+  const cellType = grid[oldRow][oldCol];
+  
+  // 恢复旧位置的样式
+  const oldCell = getCellEl(oldRow, oldCol);
+  oldCell.style.opacity = '1';
+  
+  // 查找新位置
+  const targetElement = document.elementFromPoint(endX, endY);
+  
+  if (targetElement && targetElement.classList.contains('cell')) {
+    const newRow = +targetElement.dataset.row;
+    const newCol = +targetElement.dataset.col;
+    
+    // 如果拖到同一位置，只是取消选择
+    if (newRow === oldRow && newCol === oldCol) {
+      deselectCell();
+      gridDragState.active = false;
+      return;
+    }
+    
+    // 检查目标位置是否被占用
+    if (grid[newRow][newCol]) {
+      showHint('❌ 此位置已占用！');
+      gridDragState.active = false;
+      return;
+    }
+    
+    // 移动方块
+    grid[oldRow][oldCol] = 0;
+    getCellEl(oldRow, oldCol).classList.remove('occupied', 'irregular', 'selected');
+    clearCellBorders(oldRow, oldCol);
+    
+    grid[newRow][newCol] = cellType;
+    const newCell = getCellEl(newRow, newCol);
+    newCell.classList.add(cellType === 1 ? 'occupied' : 'irregular', 'selected');
+    
+    selectedCell = {row: newRow, col: newCol};
+    
+    showHint('✅ 已移动！');
+    
+    if (!freeStyleMode) analyzeGrid();
+    else analyzeIrregular();
+  }
+  
+  gridDragState.active = false;
+}
+
+// ============================================================
+//  MOUSE DRAG OVER/DROP
+// ============================================================
 function onCellDragOver(e) {
   if (isMobile) return;
   e.preventDefault();
@@ -773,7 +977,7 @@ function onCellDrop(e) {
 }
 
 // ============================================================
-//  手机：点击网格放置
+//  CELL CLICK
 // ============================================================
 function onCellClick(e) {
   const cell = e.currentTarget;
@@ -986,7 +1190,7 @@ function highlightPerimeterEdges() {
       if (grid[r][c] === 1) {
         const cell = getCellEl(r, c);
         
-        // 顶边 - 如果上面没有方块，就显示边
+        // 顶边
         if (!grid[r - 1] || !grid[r - 1][c]) {
           cell.style.borderTop = '3px solid #ff9800';
         }
@@ -1345,6 +1549,30 @@ function showDiscovery() {
 
 document.getElementById('btn-close-popup').addEventListener('click', () => {
   document.getElementById('popup-overlay').classList.remove('show');
+});
+
+// ============================================================
+//  LEVEL SWITCHING
+// ============================================================
+document.querySelectorAll('.level-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentLevel = +btn.dataset.level;
+    config = LEVELS[currentLevel];
+    records = [];
+    discoveryShown = false;
+    freeStyleMode = false;
+    document.getElementById('btn-freestyle').classList.remove('active');
+    document.getElementById('btn-freestyle-mobile').classList.remove('active');
+    resetGrid();
+    buildPalettes();
+    buildGrid();
+    renderTable();
+    updateBadges();
+    updateLevelProgress();
+    document.getElementById('hints-container').innerHTML = '';
+  });
 });
 
 // ============================================================
