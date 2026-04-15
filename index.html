@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<title>周长探索工具 v2.3 | 移动优化版</title>
+<title>周长探索工具</title>
 <style>
   /* ===== RESET & BASE ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,7 +26,6 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
   header h1 { font-size: 1.5rem; letter-spacing: 2px; text-shadow: 1px 2px 4px rgba(0,0,0,0.3); }
-  header p { font-size: 0.8rem; opacity: 0.9; margin-top: 2px; }
 
   /* ===== LEVEL SELECTOR ===== */
   .level-bar {
@@ -237,7 +236,7 @@
     display: grid;
     grid-template-columns: repeat(16, 35px);
     grid-template-rows: repeat(16, 35px);
-    gap: 1px;
+    gap: 0;
     background: #b0bec5;
     border: 2.5px solid #90a4ae;
     border-radius: 8px;
@@ -250,18 +249,19 @@
     width: 35px; height: 35px;
     background: #f5f5f5;
     border: 1px solid #ddd;
-    transition: background 0.1s;
+    transition: background 0.15s;
     cursor: pointer;
   }
 
   .cell.occupied {
     background: linear-gradient(135deg, #64b5f6, #1976d2);
     border: 1px solid #1565c0;
+    box-shadow: inset 0 0 2px rgba(21,101,192,0.1);
   }
 
   .cell.occupied.selected {
-    border: 3px solid #ffd700;
-    box-shadow: inset 0 0 8px rgba(255,215,0,0.6), 0 0 12px rgba(255,215,0,0.4);
+    box-shadow: 0 0 12px rgba(255,215,0,0.6), inset 0 0 2px rgba(21,101,192,0.1);
+    border: 2px solid #ffd700;
   }
 
   .cell.irregular {
@@ -270,8 +270,7 @@
   }
 
   .cell.edge-external {
-    border: 2px solid #f57c00 !important;
-    box-shadow: 0 0 6px rgba(245,124,0,0.5);
+    /* 周长边在这里通过 inline style 设置 */
   }
 
   /* ===== STATUS BAR ===== */
@@ -418,13 +417,16 @@
   .delete-hint {
     background: linear-gradient(90deg, #ff6f00, #ff5722);
   }
+
+  .record-success {
+    background: linear-gradient(90deg, #43a047, #66bb6a);
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🧮 周长探索工具 v2.3</h1>
-  <p>发现形状与周长的秘密规律！</p>
+  <h1>🧮 周长探索工具</h1>
 </header>
 
 <div class="level-bar">
@@ -436,7 +438,7 @@
 
 <div class="main-container">
 
-  <!-- LEFT PANEL - 桌面显示，手机隐藏 -->
+  <!-- LEFT PANEL -->
   <div class="left-panel">
     <section class="palette-section">
       <h2>🟦 方块仓库</h2>
@@ -463,14 +465,14 @@
     </section>
   </div>
 
-  <!-- CENTER PANEL - 主工作区 -->
+  <!-- CENTER PANEL -->
   <div class="center-panel">
     <section class="workspace-section">
       <h2>📐 拼图工作区</h2>
-      <p style="font-size:0.8rem; color:#666; text-align:center; margin-bottom:8px;">💡 提示：点击调色板选择，点击网格放置。双击已放置的方块可删除</p>
+      <p style="font-size:0.8rem; color:#666; text-align:center; margin-bottom:8px;">💡 相邻方块之间的边会自动消失，只显示周长边！</p>
       <div id="grid-canvas"></div>
       <div class="status-bar" id="status-bar">
-        <div>👆 选择方块或调整已放置的方块</div>
+        <div>👆 选择方块或拖动已放置的方块</div>
       </div>
       <button class="btn-record" id="btn-record" disabled>✅ 记录这个结果</button>
     </section>
@@ -572,10 +574,9 @@ window.addEventListener('orientationchange', () => {
 });
 
 // ============================================================
-//  BUILD PALETTES (BOTH DESKTOP & MOBILE)
+//  BUILD PALETTES
 // ============================================================
 function buildPalettes() {
-  // 桌面版
   const desktopPalette = document.getElementById('palette');
   desktopPalette.innerHTML = '';
   for (let i = 0; i < config.tiles; i++) {
@@ -583,7 +584,6 @@ function buildPalettes() {
     desktopPalette.appendChild(tile);
   }
 
-  // 手机版
   const mobilePalette = document.getElementById('palette-mobile');
   mobilePalette.innerHTML = '';
   for (let i = 0; i < config.tiles; i++) {
@@ -656,25 +656,22 @@ document.querySelectorAll('.level-btn').forEach(btn => {
 });
 
 // ============================================================
-//  TAP-SELECT ON MOBILE (与桌面拖动并存)
+//  MOBILE TAP-SELECT
 // ============================================================
 function onTileTap(e) {
-  if (!isMobile) return; // 仅手机
+  if (!isMobile) return;
   
   e.stopPropagation();
   const id = e.currentTarget.dataset.id;
   
-  // 取消其他选中
   document.querySelectorAll('.tile').forEach(t => t.classList.remove('selected'));
   
-  // 如果已放置，不能再选
   const tile = document.querySelector(`.tile[data-id="${id}"]`);
   if (tile.classList.contains('placed')) {
     showHint('❌ 这个方块已放置');
     return;
   }
   
-  // 选中此方块
   e.currentTarget.classList.add('selected');
   selectedPaletteId = id;
   showHint('✅ 已选中！点击网格放置');
@@ -684,13 +681,12 @@ function showHint(message) {
   const hint = document.createElement('div');
   hint.className = 'reposition-hint';
   hint.textContent = message;
-  hint.style.background = 'linear-gradient(90deg, #2196f3, #00bcd4)';
   document.body.appendChild(hint);
   setTimeout(() => hint.remove(), 2000);
 }
 
 // ============================================================
-//  DRAG & DROP (FOR DESKTOP)
+//  DRAG & DROP
 // ============================================================
 function onTileDragStart(e) {
   if (isMobile) return;
@@ -728,7 +724,6 @@ function onCellDrop(e) {
   const row = +e.currentTarget.dataset.row;
   const col = +e.currentTarget.dataset.col;
 
-  // 来自调色板
   if (selectedPaletteId !== null && !dragFromGrid) {
     if (grid[row][col]) {
       showHint('❌ 此位置已占用！');
@@ -738,7 +733,6 @@ function onCellDrop(e) {
     placeOnGrid(row, col, 1);
     tilesPlaced++;
     
-    // 标记调色板中的方块为已用
     document.querySelectorAll(`.tile[data-id="${selectedPaletteId}"]`).forEach(t => {
       t.classList.add('placed');
     });
@@ -748,7 +742,6 @@ function onCellDrop(e) {
     if (!freeStyleMode) analyzeGrid();
     else analyzeIrregular();
   }
-  // 来自网格（重新定位）
   else if (dragFromGrid && dragFromGridPos) {
     const {row: oldRow, col: oldCol} = dragFromGridPos;
     const cellType = grid[oldRow][oldCol];
@@ -765,6 +758,7 @@ function onCellDrop(e) {
 
     grid[oldRow][oldCol] = 0;
     getCellEl(oldRow, oldCol).classList.remove('occupied', 'irregular', 'selected');
+    clearCellBorders(oldRow, oldCol);
 
     grid[row][col] = cellType;
     getCellEl(row, col).classList.add(cellType === 1 ? 'occupied' : 'irregular', 'selected');
@@ -786,7 +780,6 @@ function onCellClick(e) {
   const row = +cell.dataset.row;
   const col = +cell.dataset.col;
 
-  // 手机模式：选中的调色板方块放置
   if (isMobile && selectedPaletteId !== null) {
     if (grid[row][col]) {
       showHint('❌ 此位置已占用！');
@@ -806,7 +799,6 @@ function onCellClick(e) {
     return;
   }
 
-  // 非手机 或 自由模式
   if (freeStyleMode && grid[row][col] === 2) {
     if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
       deselectCell();
@@ -819,7 +811,6 @@ function onCellClick(e) {
     return;
   }
 
-  // 非自由模式：选中已放置的方块
   if (!freeStyleMode && grid[row][col] === 1) {
     if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
       deselectCell();
@@ -842,7 +833,8 @@ function onCellDoubleClick(e) {
 
   if (grid[row][col]) {
     grid[row][col] = 0;
-    cell.classList.remove('occupied', 'irregular', 'selected', 'edge-internal', 'edge-external');
+    cell.classList.remove('occupied', 'irregular', 'selected');
+    clearCellBorders(row, col);
     tilesPlaced--;
     selectedCell = null;
     updateRemaining();
@@ -912,6 +904,14 @@ function getCellEl(row, col) {
   return document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
 }
 
+function clearCellBorders(row, col) {
+  const cell = getCellEl(row, col);
+  cell.style.borderTop = '';
+  cell.style.borderBottom = '';
+  cell.style.borderLeft = '';
+  cell.style.borderRight = '';
+}
+
 function resetGrid() {
   grid = Array.from({length: 16}, () => Array(16).fill(0));
   tilesPlaced = 0;
@@ -921,7 +921,11 @@ function resetGrid() {
   dragFromGrid = null;
   dragFromGridPos = null;
   document.querySelectorAll('.cell').forEach(c => {
-    c.classList.remove('occupied', 'irregular', 'edge-internal', 'edge-external', 'selected');
+    c.classList.remove('occupied', 'irregular', 'edge-external', 'selected');
+    c.style.borderTop = '';
+    c.style.borderBottom = '';
+    c.style.borderLeft = '';
+    c.style.borderRight = '';
   });
   document.querySelectorAll('.tile').forEach(t => t.classList.remove('placed', 'selected'));
   updateRemaining();
@@ -934,6 +938,78 @@ function updateRemaining() {
   const remaining = config.tiles - tilesPlaced;
   document.getElementById('remaining').textContent = remaining;
   document.getElementById('remaining-mobile').textContent = remaining;
+}
+
+// ============================================================
+//  计算内部边线
+// ============================================================
+function calculateInternalEdges() {
+  const internalEdges = new Set();
+  
+  for (let r = 0; r < 16; r++) {
+    for (let c = 0; c < 16; c++) {
+      if (grid[r][c]) {
+        // 检查水平相邻
+        if (c < 15 && grid[r][c + 1]) {
+          internalEdges.add(`${r}-${c}-right`);
+          internalEdges.add(`${r}-${c + 1}-left`);
+        }
+        // 检查竖直相邻
+        if (r < 15 && grid[r + 1][c]) {
+          internalEdges.add(`${r}-${c}-bottom`);
+          internalEdges.add(`${r + 1}-${c}-top`);
+        }
+      }
+    }
+  }
+  
+  return internalEdges;
+}
+
+// ============================================================
+//  只显示周长边（消除内部边）
+// ============================================================
+function highlightPerimeterEdges() {
+  const internalEdges = calculateInternalEdges();
+  
+  // 清除所有边的样式
+  document.querySelectorAll('.cell.occupied').forEach(cell => {
+    cell.style.borderRight = '';
+    cell.style.borderBottom = '';
+    cell.style.borderTop = '';
+    cell.style.borderLeft = '';
+  });
+
+  // 遍历所有占用的方块，只标记外部边
+  for (let r = 0; r < 16; r++) {
+    for (let c = 0; c < 16; c++) {
+      if (grid[r][c] === 1) {
+        const cell = getCellEl(r, c);
+        
+        // 顶边 - 如果上面没有方块，就显示边
+        if (!grid[r - 1] || !grid[r - 1][c]) {
+          cell.style.borderTop = '3px solid #ff9800';
+        }
+        
+        // 左边
+        if (!grid[r][c - 1]) {
+          cell.style.borderLeft = '3px solid #ff9800';
+        }
+        
+        // 右边
+        if (!grid[r][c + 1]) {
+          cell.style.borderRight = '3px solid #ff9800';
+        }
+        
+        // 下边
+        if (!grid[r + 1] || !grid[r + 1][c]) {
+          cell.style.borderBottom = '3px solid #ff9800';
+        }
+        
+        cell.classList.add('edge-external');
+      }
+    }
+  }
 }
 
 // ============================================================
@@ -966,6 +1042,7 @@ function analyzeGrid() {
     document.getElementById('btn-record').disabled = true;
     document.getElementById('hints-container').innerHTML = '';
     updateEdgeCounter(0, 0);
+    highlightPerimeterEdges();
     return;
   }
 
@@ -981,6 +1058,7 @@ function analyzeGrid() {
     document.getElementById('btn-record').disabled = true;
     document.getElementById('hints-container').innerHTML = '';
     updateEdgeCounter(0, 0);
+    highlightPerimeterEdges();
     return;
   }
 
@@ -989,7 +1067,8 @@ function analyzeGrid() {
   const perimeter = (L + Ww) * 2;
   currentRect = {L, W: Ww, perimeter};
 
-  highlightEdges(minR, maxR, minC, maxC);
+  highlightPerimeterEdges();
+
   const {internal, external} = calculateEdges(minR, maxR, minC, maxC);
   updateEdgeCounter(internal, external);
 
@@ -1002,23 +1081,6 @@ function analyzeGrid() {
 // ============================================================
 //  EDGE CALCULATION
 // ============================================================
-function highlightEdges(minR, maxR, minC, maxC) {
-  document.querySelectorAll('.cell.edge-internal, .cell.edge-external').forEach(c => {
-    c.classList.remove('edge-internal', 'edge-external');
-  });
-
-  for (let r = minR; r <= maxR; r++) {
-    for (let c = minC; c <= maxC; c++) {
-      if (grid[r][c] === 1) {
-        const isPerimeter = r === minR || r === maxR || c === minC || c === maxC;
-        if (isPerimeter) {
-          getCellEl(r, c).classList.add('edge-external');
-        }
-      }
-    }
-  }
-}
-
 function calculateEdges(minR, maxR, minC, maxC) {
   let internal = 0, external = 0;
 
@@ -1059,6 +1121,8 @@ function analyzeIrregular() {
   currentRect = null;
   updateStatus(null, 'shape', perimeter);
   document.getElementById('btn-record').disabled = false;
+
+  highlightPerimeterEdges();
 
   const {internal, external} = calculateIrregularEdges();
   updateEdgeCounter(internal, external);
@@ -1149,9 +1213,8 @@ function showSuccessNotif() {
   const notif = document.createElement('div');
   notif.className = 'record-success';
   notif.textContent = '✅ 记录成功！';
-  notif.style.background = 'linear-gradient(90deg, #43a047, #66bb6a)';
   document.body.appendChild(notif);
-  setTimeout(() => notif.remove(), 500);
+  setTimeout(() => notif.remove(), 2000);
 }
 
 function renderTable() {
