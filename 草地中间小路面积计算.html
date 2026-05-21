@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>道路平移求草坪面积</title>
+<style>
+  /* ===== CSS变量与全局设置 ===== */
+  :root {
+    --green-light: #7BC67E;
+    --green-mid: #4CAF50;
+    --green-dark: #2E7D32;
+    --green-glow: #A5D6A7;
+    --road-color: #BDBDBD;
+    --road-border: #9E9E9E;
+    --bg-main: #F1F8E9;
+    --bg-card: #FFFFFF;
+    --accent-blue: #1976D2;
+    --accent-orange: #F57C00;
+    --accent-red: #D32F2F;
+    --text-main: #1B5E20;
+    --text-sub: #424242;
+    --text-light: #757575;
+    --border-light: #C8E6C9;
+    --shadow: 0 4px 20px rgba(46,125,50,0.10);
+    --shadow-strong: 0 8px 32px rgba(46,125,50,0.18);
+    --font-title: 'Georgia', 'STSong', serif;
+    --font-body: 'PingFang SC', 'Microsoft YaHei', 'SimHei', sans-serif;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 40%, #E3F2FD 100%);
+    font-family: var(--font-body);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* ===== 标题区 ===== */
+  .header {
+    text-align: center;
+    padding: 24px 0 16px;
+    position: relative;
+  }
+  .header h1 {
+    font-family: var(--font-title);
+    font-size: 2.4rem;
+    color: var(--green-dark);
+    letter-spacing: 4px;
+    text-shadow: 0 2px 8px rgba(46,125,50,0.15);
+    position: relative;
+    display: inline-block;
+  }
+  .header h1::after {
+    content: '';
+    display: block;
+    height: 4px;
+    background: linear-gradient(90deg, var(--green-mid), var(--accent-blue), var(--green-mid));
+    border-radius: 2px;
+    margin-top: 6px;
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%,100% { opacity: 0.7; } 50% { opacity: 1; }
+  }
+  .header p {
+    font-size: 1.05rem;
+    color: var(--text-sub);
+    margin-top: 10px;
+    letter-spacing: 1px;
+  }
+
+  /* ===== 主布局 ===== */
+  .main-layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* ===== 卡片 ===== */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    border: 1.5px solid var(--border-light);
+  }
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--green-dark);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    font-size: 1.3rem;
+  }
+
+  /* ===== 演示区 ===== */
+  .demo-area {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 800px) {
+    .demo-area { grid-template-columns: 1fr; }
+    .header h1 { font-size: 1.6rem; }
+  }
+
+  /* ===== SVG容器 ===== */
+  .svg-wrap {
+    background: linear-gradient(135deg, #F9FBE7, #E8F5E9);
+    border-radius: var(--radius);
+    border: 2px solid var(--border-light);
+    padding: 20px 16px 8px;
+    position: relative;
+    overflow: visible;
+  }
+  .svg-wrap svg { display: block; margin: 0 auto; }
+
+  /* ===== 状态卡片 ===== */
+  .status-card {
+    background: linear-gradient(160deg, #F1F8E9, #E3F2FD);
+    border-radius: var(--radius);
+    border: 2px solid var(--border-light);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .status-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .status-label {
+    font-size: 0.82rem;
+    color: var(--text-light);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .status-value {
+    font-size: 1.08rem;
+    font-weight: bold;
+    color: var(--text-main);
+  }
+  .status-value.highlight {
+    color: var(--green-dark);
+    font-size: 1.3rem;
+  }
+  .status-value.mid { color: var(--accent-orange); }
+  .status-value.edge { color: var(--accent-blue); }
+
+  .status-tip {
+    font-size: 0.88rem;
+    color: var(--accent-blue);
+    background: #E3F2FD;
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    line-height: 1.5;
+    border-left: 3px solid var(--accent-blue);
+  }
+  .status-tip.done {
+    color: var(--green-dark);
+    background: #E8F5E9;
+    border-left-color: var(--green-mid);
+  }
+
+  /* ===== 控制区 ===== */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .slider-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-sub);
+  }
+  .slider-pos-label {
+    font-size: 0.82rem;
+    color: var(--accent-orange);
+    background: #FFF3E0;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  input[type="range"].h-slider {
+    background: linear-gradient(90deg, var(--green-mid) 0%, var(--green-light) 100%);
+  }
+  input[type="range"].v-slider {
+    background: linear-gradient(90deg, var(--accent-blue) 0%, #90CAF9 100%);
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--green-mid);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  input[type="range"].v-slider::-webkit-slider-thumb { border-color: var(--accent-blue); }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    flex: 1;
+    min-width: 90px;
+    padding: 10px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    font-family: var(--font-body);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--green-mid), var(--green-dark));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(76,175,80,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(76,175,80,0.4); }
+  .btn-secondary {
+    background: linear-gradient(135deg, #FF8A65, var(--accent-orange));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(245,124,0,0.3);
+  }
+  .btn-secondary:hover { transform: translateY(-2px); }
+  .btn-accent {
+    background: linear-gradient(135deg, #42A5F5, var(--accent-blue));
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(25,118,210,0.3);
+  }
+  .btn-accent:hover { transform: translateY(-2px); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  /* ===== 公式讲解区 ===== */
+  .formula-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 640px) {
+    .formula-area { grid-template-columns: 1fr; }
+  }
+  .formula-card {
+    background: linear-gradient(135deg, #F9FBE7, #FFFDE7);
+    border-radius: var(--radius);
+    border: 2px solid #F9A825;
+    padding: 18px 20px;
+  }
+  .formula-card.method2 {
+    background: linear-gradient(135deg, #E3F2FD, #E8EAF6);
+    border-color: var(--accent-blue);
+  }
+  .formula-title {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #F57F17;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .formula-card.method2 .formula-title { color: var(--accent-blue); }
+  .formula-step {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-sub);
+  }
+  .formula-step .eq {
+    background: rgba(255,255,255,0.7);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.98rem;
+    color: #333;
+    border: 1px solid rgba(0,0,0,0.08);
+  }
+  .formula-answer {
+    margin-top: 12px;
+    background: var(--green-dark);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 12px rgba(46,125,50,0.25);
+  }
+
+  /* ===== 规律总结弹出框 ===== */
+  .discovery-box {
+    display: none;
+    background: linear-gradient(135deg, #E8F5E9, #F3E5F5);
+    border: 2.5px solid var(--green-mid);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-top: 10px;
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow: var(--shadow-strong);
+  }
+  .discovery-box.show { display: block; }
+  @keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .discovery-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--green-dark);
+    margin-bottom: 8px;
+  }
+  .discovery-text {
+    font-size: 1rem;
+    color: var(--text-sub);
+    line-height: 1.7;
+  }
+  .discovery-emoji { font-size: 1.8rem; margin-bottom: 6px; }
+
+  /* ===== tooltip ===== */
+  .tooltip {
+    position: absolute;
+    background: rgba(0,0,0,0.78);
+    color: #fff;
+    font-size: 0.82rem;
+    padding: 5px 11px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    display: none;
+  }
+
+  /* ===== 分割线 ===== */
+  .section-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--border-light), transparent);
+    border-radius: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 区域1：标题 -->
+<div class="header">
+  <h1>🌿 道路平移求草坪面积</h1>
+  <p>把中间的道路平移到边上，复杂图形变成简单长方形</p>
+</div>
+
+<div class="main-layout">
+
+  <!-- 区域2：交互演示区 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🎯</span> 交互演示</div>
+    <div class="demo-area">
+      <!-- SVG图形 -->
+      <div class="svg-wrap">
+        <svg id="mainSvg" viewBox="0 0 600 250" width="100%" style="max-width:600px"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <!-- 状态卡片 -->
+      <div class="status-card">
+        <div class="card-title" style="margin-bottom:4px"><span class="icon">📊</span> 当前状态</div>
+        <div class="status-item">
+          <span class="status-label">横向道路位置</span>
+          <span class="status-value" id="hPosLabel">居中</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">竖向道路位置</span>
+          <span class="status-value" id="vPosLabel">居中</span>
+        </div>
+        <div class="section-divider"></div>
+        <div class="status-item">
+          <span class="status-label">草坪块数</span>
+          <span class="status-value highlight" id="lawnBlocks">4 块</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">草坪总面积</span>
+          <span class="status-value highlight" id="lawnArea">224 平方米</span>
+        </div>
+        <div class="status-item">
+          <span class="status-label">草坪总周长</span>
+          <span class="status-value" id="lawnPerimeter">152 米</span>
+        </div>
+        <div class="section-divider"></div>
+        <div class="status-tip" id="statusTip">
+          📌 拖动下方滑块，观察道路平移！
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 区域3：控制区 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🎮</span> 控制面板</div>
+    <div class="controls">
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>⬆ 横向道路位置（向上平移）</span>
+          <span class="slider-pos-label" id="hLabel">中间</span>
+        </div>
+        <input type="range" class="h-slider" id="hSlider" min="0" max="100" value="0">
+      </div>
+      <div class="slider-group">
+        <div class="slider-label">
+          <span>⬅ 竖向道路位置（向左平移）</span>
+          <span class="slider-pos-label" id="vLabel">中间</span>
+        </div>
+        <input type="range" class="v-slider" id="vSlider" min="0" max="100" value="0">
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btnEdge">📐 一键平移到边上</button>
+        <button class="btn btn-secondary" id="btnReset">↩ 还原到中间</button>
+        <button class="btn btn-accent" id="btnAuto">▶ 自动演示</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 区域4：公式讲解区 -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📝</span> 两种计算方法</div>
+    <div class="formula-area">
+      <!-- 方法一 -->
+      <div class="formula-card">
+        <div class="formula-title">📐 方法一：先减道路面积</div>
+        <div class="formula-step">
+          <div>原长方形面积：</div>
+          <div class="eq">30 × 10 = 300 平方米</div>
+          <div>减去横向道路：</div>
+          <div class="eq">- 30 × 2 = 60 平方米</div>
+          <div>减去竖向道路：</div>
+          <div class="eq">- 10 × 2 = 20 平方米</div>
+          <div>加回交叉重复部分：</div>
+          <div class="eq">+ 2 × 2 = 4 平方米</div>
+          <div>（两条道路交叉处被减了两次，需要加回一次）</div>
+        </div>
+        <div class="formula-answer">300 − 60 − 20 + 4 = 224 平方米</div>
+      </div>
+      <!-- 方法二 -->
+      <div class="formula-card method2">
+        <div class="formula-title">🔄 方法二：平移后直接算</div>
+        <div class="formula-step">
+          <div>把道路平移到边上之后：</div>
+          <div class="eq">草坪长 = 30 − 2 = 28 米</div>
+          <div class="eq">草坪宽 = 10 − 2 = 8 米</div>
+          <div>草坪变成规则长方形：</div>
+          <div class="eq">28 × 8 = 224 平方米</div>
+          <div>✅ 计算更简便！</div>
+        </div>
+        <div class="formula-answer">( 30 − 2 ) × ( 10 − 2 ) = 224 平方米</div>
+      </div>
+    </div>
+
+    <!-- 发现规律 -->
+    <div class="discovery-box" id="discoveryBox">
+      <div class="discovery-emoji">🌟</div>
+      <div class="discovery-title">发现规律！</div>
+      <div class="discovery-text">
+        中间的道路可以平移到边上，<strong>草坪面积不变</strong>。<br>
+        平移后，复杂的四块草坪就变成了<strong>一个规则长方形</strong>，<br>
+        计算起来更加简单方便！
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===================================================
+   常量与参数
+=================================================== */
+const TOTAL_L = 30;   // 总长（米）
+const TOTAL_W = 10;   // 总宽（米）
+const ROAD_W  = 2;    // 道路宽（米）
+
+// SVG缩放：1米 = PX 像素
+const PX = 16;
+
+// SVG坐标偏移（留出标注空间）
+const OX = 50;   // X原点偏移
+const OY = 40;   // Y原点偏移
+
+// 场地像素尺寸
+const FW = TOTAL_L * PX;   // 480px
+const FH = TOTAL_W * PX;   // 160px
+const RW = ROAD_W  * PX;   // 32px
+
+// SVG画布大小
+const SVG_W = FW + OX * 2;   // 580
+const SVG_H = FH + OY * 2 + 30; // 230+
+
+/* ===================================================
+   状态
+=================================================== */
+let hVal = 0; // 横向道路平移值 0~1（0=中间，1=顶部边上）
+let vVal = 0; // 竖向道路平移值 0~1（0=中间，1=左侧边上）
+let autoTimer = null;
+let autoPhase = 0; // 0: 横向, 1: 竖向
+
+/* ===================================================
+   获取道路当前像素位置（道路左上角Y或X）
+=================================================== */
+function getRoadH_Y() {
+  // 横向道路：从中间位置(约中央)平移到顶部(y=0)
+  // 道路初始中心Y = FH/2 => 道路上边 = FH/2 - RW/2
+  const centerY = FH / 2 - RW / 2;
+  // 目标Y（到顶边）= 0
+  return centerY * (1 - hVal);
+}
+
+function getRoadV_X() {
+  // 竖向道路：从中间位置平移到左边(x=0)
+  const centerX = FW / 2 - RW / 2;
+  return centerX * (1 - vVal);
+}
+
+/* ===================================================
+   计算状态文字
+=================================================== */
+function getPosLabel(val) {
+  if (val < 0.02) return { text: '居中', cls: '' };
+  if (val > 0.98) return { text: '已到边上 ✓', cls: 'edge' };
+  return { text: '平移中…', cls: 'mid' };
+}
+
+function getLawnBlocks() {
+  const hEdge = hVal > 0.98;
+  const vEdge = vVal > 0.98;
+  if (hEdge && vEdge) return 1;
+  if (hEdge || vEdge) return 2;
+  return 4;
+}
+
+// 周长计算
+// 中间十字：4块，总周长152
+// 单条到边：2块，周长动态插值
+// 都到边：1块28×8，周长72
+function getLawnPerimeter() {
+  const hEdge = hVal > 0.98;
+  const vEdge = vVal > 0.98;
+  if (hEdge && vEdge) return 72;
+
+  // 精确计算：用4个矩形块的周长之和（内部接触边不算）
+  // 分块计算所有绿色矩形
+  const rects = getGreenRects();
+  // 用合并计算周长（简化：分离矩形周长之和，内部不重叠则周长=各自周长之和）
+  // 实际上矩形不共边时，总周长 = Σ(2*(w+h))
+  let perim = 0;
+  for (const r of rects) {
+    const wM = r.w / PX;
+    const hM = r.h / PX;
+    perim += 2 * (wM + hM);
+  }
+  return Math.round(perim);
+}
+
+/* ===================================================
+   获取绿色草坪矩形列表（像素坐标，相对于场地左上角）
+=================================================== */
+function getGreenRects() {
+  const hy = getRoadH_Y();
+  const vx = getRoadV_X();
+  // 横向道路占据 y=[hy, hy+RW]
+  // 竖向道路占据 x=[vx, vx+RW]
+  // 草坪 = 场地 - 横向道路 - 竖向道路
+
+  // 4个可能区域（相对场地左上角）：
+  // TL: x[0,vx] y[0,hy]
+  // TR: x[vx+RW,FW] y[0,hy]
+  // BL: x[0,vx] y[hy+RW,FH]
+  // BR: x[vx+RW,FW] y[hy+RW,FH]
+
+  const rects = [];
+  const add = (x, y, w, h) => { if (w > 0.5 && h > 0.5) rects.push({x, y, w, h}); };
+
+  add(0,       0,       vx,       hy);       // TL
+  add(vx+RW,   0,       FW-vx-RW, hy);       // TR
+  add(0,       hy+RW,   vx,       FH-hy-RW); // BL
+  add(vx+RW,   hy+RW,   FW-vx-RW, FH-hy-RW);// BR
+
+  return rects;
+}
+
+/* ===================================================
+   绘制SVG
+=================================================== */
+const svg = document.getElementById('mainSvg');
+
+function render() {
+  const hy = getRoadH_Y();
+  const vx = getRoadV_X();
+  const hEdge = hVal > 0.98;
+  const vEdge = vVal > 0.98;
+  const bothEdge = hEdge && vEdge;
+
+  let content = '';
+
+  // 定义渐变、虚线样式等
+  content += `
+    <defs>
+      <pattern id="grass" patternUnits="userSpaceOnUse" width="18" height="18">
+        <rect width="18" height="18" fill="${bothEdge ? '#43A047' : '#66BB6A'}"/>
+        <circle cx="4" cy="14" r="1.2" fill="#388E3C" opacity="0.35"/>
+        <circle cx="10" cy="6" r="1.2" fill="#388E3C" opacity="0.35"/>
+        <circle cx="15" cy="13" r="1.2" fill="#388E3C" opacity="0.35"/>
+      </pattern>
+      <pattern id="grassFinal" patternUnits="userSpaceOnUse" width="18" height="18">
+        <rect width="18" height="18" fill="#2E7D32"/>
+        <circle cx="4" cy="14" r="1.5" fill="#1B5E20" opacity="0.4"/>
+        <circle cx="11" cy="5" r="1.5" fill="#1B5E20" opacity="0.4"/>
+        <circle cx="15" cy="12" r="1.5" fill="#1B5E20" opacity="0.4"/>
+      </pattern>
+      <marker id="arrowH" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="auto">
+        <path d="M0,0 L0,6 L8,3 Z" fill="#F57C00"/>
+      </marker>
+      <marker id="arrowV" markerWidth="8" markerHeight="8" refX="4" refY="3" orient="270">
+        <path d="M0,0 L0,6 L8,3 Z" fill="#1976D2"/>
+      </marker>
+    </defs>
+  `;
+
+  // 场地背景（灰色底，表示道路范围）
+  content += `<rect x="${OX}" y="${OY}" width="${FW}" height="${FH}"
+    fill="#E0E0E0" stroke="#9E9E9E" stroke-width="2" rx="3"/>`;
+
+  // 虚线：道路原始位置（只在平移时显示）
+  const origHY = FH / 2 - RW / 2;
+  const origVX = FW / 2 - RW / 2;
+
+  if (hVal > 0.04 && hVal < 0.96) {
+    content += `<rect x="${OX}" y="${OY + origHY}" width="${FW}" height="${RW}"
+      fill="none" stroke="#F57C00" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.55" rx="1"/>`;
+  }
+  if (vVal > 0.04 && vVal < 0.96) {
+    content += `<rect x="${OX + origVX}" y="${OY}" width="${RW}" height="${FH}"
+      fill="none" stroke="#1976D2" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.55" rx="1"/>`;
+  }
+
+  // 绘制绿色草坪块
+  const rects = getGreenRects();
+  const grassFill = bothEdge ? 'url(#grassFinal)' : 'url(#grass)';
+  for (const r of rects) {
+    content += `<rect
+      x="${OX + r.x}" y="${OY + r.y}" width="${r.w}" height="${r.h}"
+      fill="${grassFill}" stroke="${bothEdge ? '#1B5E20' : '#388E3C'}"
+      stroke-width="${bothEdge ? 2 : 1}" rx="1"
+      class="lawn-rect" data-tip="草坪面积始终不变"/>`;
+  }
+
+  // 绘制横向道路
+  const roadHOpacity = hEdge ? 0.35 : 0.90;
+  content += `<rect id="roadH"
+    x="${OX}" y="${OY + hy}" width="${FW}" height="${RW}"
+    fill="#BDBDBD" stroke="#9E9E9E" stroke-width="1.5" opacity="${roadHOpacity}"
+    rx="1" data-tip="道路可以平移，但宽度不变"/>`;
+
+  // 绘制竖向道路
+  const roadVOpacity = vEdge ? 0.35 : 0.90;
+  content += `<rect id="roadV"
+    x="${OX + vx}" y="${OY}" width="${RW}" height="${FH}"
+    fill="#BDBDBD" stroke="#9E9E9E" stroke-width="1.5" opacity="${roadVOpacity}"
+    rx="1" data-tip="道路可以平移，但宽度不变"/>`;
+
+  // 交叉区（稍深色）
+  if (!hEdge && !vEdge) {
+    content += `<rect x="${OX + vx}" y="${OY + hy}" width="${RW}" height="${RW}"
+      fill="#EEEEEE" stroke="#BDBDBD" stroke-width="1" opacity="0.9"/>`;
+  }
+
+  // 场地外框
+  content += `<rect x="${OX}" y="${OY}" width="${FW}" height="${FH}"
+    fill="none" stroke="#555" stroke-width="2.5" rx="3"/>`;
+
+  // ===== 标注 =====
+  // 总长标注（上方）
+  content += `
+    <line x1="${OX}" y1="${OY - 12}" x2="${OX + FW}" y2="${OY - 12}"
+      stroke="#555" stroke-width="1.2" marker-start="url(#dimLeft)" marker-end="url(#dimRight)"/>
+    <text x="${OX + FW/2}" y="${OY - 18}" text-anchor="middle"
+      font-size="13" font-weight="bold" fill="#333" font-family="PingFang SC,Microsoft YaHei,sans-serif">
+      总长 30 米
+    </text>`;
+
+  // 总宽标注（左侧）
+  content += `
+    <text x="${OX - 10}" y="${OY + FH/2 + 5}" text-anchor="middle"
+      font-size="13" font-weight="bold" fill="#333"
+      font-family="PingFang SC,Microsoft YaHei,sans-serif"
+      transform="rotate(-90,${OX - 10},${OY + FH/2})">
+      总宽 10 米
+    </text>`;
+
+  // 平移箭头和标注（动态）
+  if (!hEdge && hVal > 0.02) {
+    const arrowY = OY + hy + RW/2;
+    const arrowTX = OX + FW + 12;
+    content += `
+      <text x="${arrowTX}" y="${arrowY - 6}" font-size="11" fill="#F57C00"
+        font-family="PingFang SC,sans-serif" font-weight="bold">向上</text>
+      <text x="${arrowTX}" y="${arrowY + 8}" font-size="11" fill="#F57C00"
+        font-family="PingFang SC,sans-serif" font-weight="bold">平移</text>
+      <line x1="${OX + FW + 8}" y1="${arrowY}" x2="${OX + FW + 8}" y2="${OY + origHY + RW/2}"
+        stroke="#F57C00" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.7"/>`;
+  }
+  if (!vEdge && vVal > 0.02) {
+    const arrowX = OX + vx + RW/2;
+    content += `
+      <text x="${arrowX - 18}" y="${OY + FH + 24}" font-size="11" fill="#1976D2"
+        font-family="PingFang SC,sans-serif" font-weight="bold">向左平移</text>`;
+  }
+
+  // ===== 道路宽标注 =====
+  if (!hEdge) {
+    content += `
+      <text x="${OX - 42}" y="${OY + hy + RW/2 + 4}" font-size="11" fill="#888"
+        font-family="PingFang SC,sans-serif">道路 2m</text>`;
+  }
+
+  // ===== 最终状态：显示28×8标注 =====
+  if (bothEdge) {
+    // 绿色区域尺寸标注
+    const gW = FW - RW; // 448
+    const gH = FH - RW; // 128
+    const gX = OX + RW; // 道路在左/上边
+    const gY = OY + RW;
+
+    content += `
+      <text x="${gX + gW/2}" y="${gY + gH/2 - 10}"
+        text-anchor="middle" font-size="18" font-weight="bold"
+        fill="#fff" font-family="PingFang SC,sans-serif"
+        style="text-shadow:0 1px 4px rgba(0,0,0,0.5)">
+        28 × 8 = 224
+      </text>
+      <text x="${gX + gW/2}" y="${gY + gH/2 + 12}"
+        text-anchor="middle" font-size="13" fill="#E8F5E9"
+        font-family="PingFang SC,sans-serif">
+        草坪面积 = 224 平方米
+      </text>
+      <text x="${gX + gW/2}" y="${gY - 8}"
+        text-anchor="middle" font-size="12" fill="#2E7D32"
+        font-family="PingFang SC,sans-serif" font-weight="bold">
+        ← 28 米 →
+      </text>
+      <text x="${gX - 8}" y="${gY + gH/2 + 4}"
+        text-anchor="middle" font-size="12" fill="#2E7D32"
+        font-family="PingFang SC,sans-serif" font-weight="bold"
+        transform="rotate(-90,${gX - 8},${gY + gH/2})">
+        8 米
+      </text>`;
+  }
+
+  svg.innerHTML = content;
+
+  // 设置SVG尺寸
+  const svgH = FH + OY * 2 + 20;
+  svg.setAttribute('viewBox', `0 0 ${FW + OX*2} ${svgH}`);
+
+  // 绑定tooltip
+  svg.querySelectorAll('[data-tip]').forEach(el => {
+    el.style.cursor = 'pointer';
+    el.addEventListener('mouseenter', (e) => {
+      showTooltip(e, el.getAttribute('data-tip'));
+    });
+    el.addEventListener('mouseleave', hideTooltip);
+    el.addEventListener('mousemove', moveTooltip);
+  });
+}
+
+/* ===================================================
+   Tooltip
+=================================================== */
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e, text) {
+  tooltip.textContent = text;
+  tooltip.style.display = 'block';
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  const wrap = svg.parentElement.getBoundingClientRect();
+  const x = e.clientX - wrap.left + 10;
+  const y = e.clientY - wrap.top - 30;
+  tooltip.style.left = x + 'px';
+  tooltip.style.top  = y + 'px';
+}
+function hideTooltip() { tooltip.style.display = 'none'; }
+
+/* ===================================================
+   更新UI文字
+=================================================== */
+function updateUI() {
+  const hEdge = hVal > 0.98;
+  const vEdge = vVal > 0.98;
+  const bothEdge = hEdge && vEdge;
+
+  // 滑块标签
+  const hL = getPosLabel(hVal);
+  const vL = getPosLabel(vVal);
+  document.getElementById('hLabel').textContent = hL.text;
+  document.getElementById('vLabel').textContent = vL.text;
+
+  // 状态卡片
+  const hPosEl = document.getElementById('hPosLabel');
+  hPosEl.textContent = hL.text;
+  hPosEl.className = 'status-value ' + hL.cls;
+
+  const vPosEl = document.getElementById('vPosLabel');
+  vPosEl.textContent = vL.text;
+  vPosEl.className = 'status-value ' + vL.cls;
+
+  document.getElementById('lawnBlocks').textContent = getLawnBlocks() + ' 块';
+  document.getElementById('lawnArea').textContent = '224 平方米（不变）';
+  document.getElementById('lawnPerimeter').textContent = getLawnPerimeter() + ' 米';
+
+  // 提示文字
+  const tip = document.getElementById('statusTip');
+  if (bothEdge) {
+    tip.textContent = '✅ 道路已平移到边上，绿色草坪变成了规则长方形！';
+    tip.className = 'status-tip done';
+  } else if (hVal < 0.02 && vVal < 0.02) {
+    tip.textContent = '📌 拖动滑块，观察道路平移过程！';
+    tip.className = 'status-tip';
+  } else {
+    tip.textContent = '🔄 道路正在平移，草坪面积不变。';
+    tip.className = 'status-tip';
+  }
+
+  // 发现规律框
+  const discBox = document.getElementById('discoveryBox');
+  if (bothEdge) {
+    discBox.classList.add('show');
+  } else {
+    discBox.classList.remove('show');
+  }
+}
+
+/* ===================================================
+   滑块事件
+=================================================== */
+const hSlider = document.getElementById('hSlider');
+const vSlider = document.getElementById('vSlider');
+
+hSlider.addEventListener('input', () => {
+  hVal = hSlider.value / 100;
+  render(); updateUI();
+});
+vSlider.addEventListener('input', () => {
+  vVal = vSlider.value / 100;
+  render(); updateUI();
+});
+
+/* ===================================================
+   按钮功能
+=================================================== */
+document.getElementById('btnEdge').addEventListener('click', () => {
+  animateTo(1, 1, 600);
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  stopAuto();
+  animateTo(0, 0, 600);
+});
+
+const btnAuto = document.getElementById('btnAuto');
+btnAuto.addEventListener('click', () => {
+  if (autoTimer) { stopAuto(); return; }
+  startAuto();
+});
+
+function stopAuto() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  btnAuto.textContent = '▶ 自动演示';
+  btnAuto.disabled = false;
+}
+
+function startAuto() {
+  // 先还原
+  hVal = 0; vVal = 0;
+  hSlider.value = 0; vSlider.value = 0;
+  render(); updateUI();
+  btnAuto.textContent = '⏸ 演示中…';
+
+  let phase = 0; // 0: h增大 1: v增大 2: 完成停留 3: 重置
+  let step = 0;
+  const STEPS = 80;
+  const PAUSE = 40;
+
+  autoTimer = setInterval(() => {
+    if (phase === 0) {
+      step++;
+      hVal = Math.min(1, step / STEPS);
+      hSlider.value = hVal * 100;
+      if (hVal >= 1) { phase = 1; step = 0; }
+    } else if (phase === 1) {
+      step++;
+      vVal = Math.min(1, step / STEPS);
+      vSlider.value = vVal * 100;
+      if (vVal >= 1) { phase = 2; step = 0; }
+    } else if (phase === 2) {
+      step++;
+      if (step > PAUSE) { stopAuto(); }
+    }
+    render(); updateUI();
+  }, 25);
+}
+
+/* ===================================================
+   平滑动画到目标值
+=================================================== */
+function animateTo(targetH, targetV, duration) {
+  const startH = hVal, startV = vVal;
+  const startTime = performance.now();
+  function frame(now) {
+    const t = Math.min(1, (now - startTime) / duration);
+    const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+    hVal = startH + (targetH - startH) * ease;
+    vVal = startV + (targetV - startV) * ease;
+    hSlider.value = hVal * 100;
+    vSlider.value = vVal * 100;
+    render(); updateUI();
+    if (t < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ===================================================
+   初始渲染
+=================================================== */
+render();
+updateUI();
+</script>
+
+</body>
+</html>
